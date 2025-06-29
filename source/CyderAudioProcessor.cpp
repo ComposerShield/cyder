@@ -116,6 +116,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     {
         juce::ScopedJuceInitialiser_GUI libraryInitialiser;
         juce::File pluginFile(pluginPath);
+        const bool reloadingSamePlugin = pluginFile == currentPluginFile;
+        
         // Copy plugin to temp with a random hash appended
         auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
         
@@ -132,10 +134,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
         // Make sure nothing above threw exception before swapping out current members
         
+        currentPluginFile = pluginFile;
+        
         if (hotReloadThread != nullptr)
             hotReloadThread->stopThread(1000); // don't hot reload while we're loading
         
-        cyderEditor->unloadWrappedEditor();
+        cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ reloadingSamePlugin);
         wrappedPluginEditor.reset();
         
         {

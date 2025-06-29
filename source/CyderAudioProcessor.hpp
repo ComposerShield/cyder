@@ -48,6 +48,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
 private:
+    juce::File currentPluginFile;
     juce::AudioPluginFormatManager formatManager;
     
     std::mutex wrappedPluginMutex;

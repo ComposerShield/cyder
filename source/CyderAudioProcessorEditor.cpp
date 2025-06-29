@@ -65,11 +65,20 @@ void CyderAudioProcessorEditor::fileDragExit(const juce::StringArray& files)
     repaint();
 }
 
-void CyderAudioProcessorEditor::unloadWrappedEditor()
+void CyderAudioProcessorEditor::unloadWrappedEditor(bool shouldCacheSize)
 {
     auto* editor = processor.getWrappedPluginEditor();
     if (editor != nullptr)
+    {
+        if (shouldCacheSize)
+        {
+            cachedWidth = editor->getWidth();
+            cachedHeight = editor->getHeight();
+        }
+        
+        editor->removeComponentListener(this);
         removeChildComponent(editor);
+    }
 }
 
 void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
@@ -77,8 +86,27 @@ void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
     auto* editor = processor.getWrappedPluginEditor();
     if (editor != nullptr)
     {
-        setSize(editor->getWidth(), editor->getHeight());
+        if (cachedWidth.has_value() && cachedHeight.has_value())
+        {
+            editor->setSize(std::exchange(cachedWidth,  std::nullopt).value(),
+                            std::exchange(cachedHeight, std::nullopt).value());
+        }
+        else
+            setSize(editor->getWidth(), editor->getHeight());
+        
         addAndMakeVisible(editor);
         editor->setTopLeftPosition(0, 0);
+        editor->addComponentListener(this);
+    }
+}
+
+void CyderAudioProcessorEditor::componentMovedOrResized(juce::Component& /*component*/,
+                                                        bool /*wasMoved*/,
+                                                        bool wasResized)
+{
+    if (wasResized)
+    {
+        auto* editor = processor.getWrappedPluginEditor();
+        setSize(editor->getWidth(), editor->getHeight());
     }
 }
