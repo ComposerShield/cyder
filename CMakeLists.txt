@@ -11,8 +11,30 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
 # Create a plugin target
 juce_add_plugin(Cyder_App
-    FORMATS VST3 Standalone
     PRODUCT_NAME "Cyder"
+    FORMATS VST3 Standalone
+    
+    COPY_PLUGIN_AFTER_BUILD FALSE
+
+    COMPANY_NAME "Cyder"
+    COMPANY_COPYRIGHT "Copyright (c) 2025"
+    COMPANY_WEBSITE "https://github.com/ComposerShield/cyder"
+
+    IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    DISABLE_AAX_BYPASS FALSE
+    DISABLE_AAX_MULTI_MONO FALSE
+    MICROPHONE_PERMISSION_ENABLED TRUE
+
+    AU_MAIN_TYPE kAudioUnitType_Effect
+    VST3_CATEGORIES Fx
+
+    BUNDLE_ID "com.Antares.AutoTuneCore"
+    PLUGIN_MANUFACTURER_CODE Cydr               # A four-character manufacturer id with at least one upper-case character
+    PLUGIN_CODE Cydr                            # A unique four-character plugin id with exactly one upper-case character
 )
 
 # Collect all source files in the source directory
