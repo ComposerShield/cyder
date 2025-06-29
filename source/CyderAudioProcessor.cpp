@@ -161,6 +161,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         auto instance     = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
         auto editor       = instance->createEditor();
         auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
+        
+        instance->prepareToPlay(sampleRate, blockSize);
 
         // Make sure nothing above threw exception before swapping out current members
         
