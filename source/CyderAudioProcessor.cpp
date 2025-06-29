@@ -26,10 +26,27 @@ CyderAudioProcessor::~CyderAudioProcessor()
 
 void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
+    if (getTotalNumInputChannels() != wrappedPlugin->getTotalNumInputChannels()
+        || getTotalNumOutputChannels() != wrappedPlugin->getTotalNumOutputChannels())
+    {
+        wrappedPlugin->setPlayConfigDetails(getTotalNumInputChannels(),
+                                            getTotalNumOutputChannels(),
+                                            sampleRate,
+                                            samplesPerBlock);
+    }
+    
+    wrappedPlugin->prepareToPlay(sampleRate, samplesPerBlock);
 }
 
 void CyderAudioProcessor::releaseResources()
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
+    wrappedPlugin->releaseResources();
 }
 
 bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -40,8 +57,10 @@ bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) co
 void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
-//    if (wrappedPluginMutex != nullptr)
-//        wrappedPluginMutex->processBlock(buffer);
+    if (wrappedPlugin == nullptr)
+        return;
+    
+    wrappedPlugin->processBlock(buffer, midiMessages);
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::createEditor()
@@ -61,7 +80,7 @@ const juce::String CyderAudioProcessor::getName() const
 
 bool CyderAudioProcessor::acceptsMidi() const
 {
-    return false;
+    return true;
 }
 
 bool CyderAudioProcessor::producesMidi() const
@@ -76,7 +95,7 @@ bool CyderAudioProcessor::isMidiEffect() const
 
 double CyderAudioProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+    return std::numeric_limits<double>::infinity();
 }
 
 int CyderAudioProcessor::getNumPrograms()
@@ -104,10 +123,18 @@ void CyderAudioProcessor::changeProgramName (int index, const juce::String& newN
 
 void CyderAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
+    wrappedPlugin->getStateInformation(destData);
 }
 
 void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
+    wrappedPlugin->setStateInformation(data, sizeInBytes);
 }
 
 bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
@@ -150,6 +177,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         {
             std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
             wrappedPlugin.reset(instance.release());
+            setLatencySamples(wrappedPlugin->getLatencySamples());
         }
         wrappedPluginEditor.reset(std::move(editor));
         
