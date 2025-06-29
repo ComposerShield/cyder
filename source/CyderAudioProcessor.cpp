@@ -132,12 +132,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
         // Make sure nothing above threw exception before swapping out current members
         
-        auto currentThreadID = juce::Thread::getCurrentThreadId();
-        bool calledFromHotReloadThread = (hotReloadThread == nullptr) ? false
-                                                                      : (currentThreadID != hotReloadThread->getThreadId());
-        if (hotReloadThread != nullptr
-            && ! calledFromHotReloadThread)
-            hotReloadThread->stopThread(1000);
+        if (hotReloadThread != nullptr)
+            hotReloadThread->stopThread(1000); // don't hot reload while we're loading
         
         cyderEditor->unloadWrappedEditor();
         wrappedPluginEditor.reset();
@@ -150,12 +146,11 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         
         cyderEditor->loadWrappedEditorFromProcessor();
         
-        if (! calledFromHotReloadThread)
-            hotReloadThread = std::make_unique<HotReloadThread>(pluginFile);
+        hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
         
         hotReloadThread->onPluginChangeDetected = [&]
         {
-            juce::MessageManager::callSync([&]
+            juce::MessageManager::callAsync([&]
             {
                 try
                 {
