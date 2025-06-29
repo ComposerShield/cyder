@@ -27,12 +27,18 @@ void HotReloadThread::run()
 {
     while (true)
     {
+        if (threadShouldExit())
+            return;
+        
         // Check the deepest child files for changes
         juce::Time current = getLatestModificationTime (pluginToReload);
         if (current > lastTimePluginWasModified)
         {
-            lastTimePluginWasModified = current;
             DBG ("Plugin Modified!");
+            lastTimePluginWasModified = current;
+            
+            if (auto callback = std::exchange(onPluginChangeDetected, nullptr))
+                return callback();
         }
         
         juce::Thread::wait(500); // ms
