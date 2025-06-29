@@ -73,8 +73,8 @@
  * @param windowTitle The title to use for the window.
  * @throws std::runtime_error if the plugin has no editor.
  */
-static void showEditorWindow(juce::AudioPluginInstance* instance,
-                             const juce::String& windowTitle) noexcept(false)
+static std::unique_ptr<juce::DocumentWindow> createAndShowEditorWindow(juce::AudioPluginInstance* instance,
+                                                                       const juce::String& windowTitle) noexcept(false)
 {
     auto* editor = instance->createEditor();
     if (editor == nullptr)
@@ -83,15 +83,17 @@ static void showEditorWindow(juce::AudioPluginInstance* instance,
     int h = editor->getHeight();
     if (w <= 0 || h <= 0)
         editor->setSize(w = 400, h = 300);
-    auto* window = new juce::DocumentWindow(windowTitle,
-                                            juce::Colours::lightgrey,
-                                            juce::DocumentWindow::allButtons,
-                                            true);
+    auto window = std::make_unique<juce::DocumentWindow>(windowTitle,
+                                                         juce::Colours::lightgrey,
+                                                         juce::DocumentWindow::allButtons,
+                                                         true);
     window->setUsingNativeTitleBar(true);
     window->setContentOwned(editor, true);
     window->centreWithSize(w, h);
     window->setVisible(true);
     window->setTopLeftPosition(0, 0);
+    
+    return std::move(window);
 }
 
 /**
@@ -111,13 +113,37 @@ int main(int argc, char* argv[])
 
         juce::AudioPluginFormatManager formatManager;
         formatManager.addDefaultFormats();
-        
-        HotReloadThread hotReloadThread(pluginFile);
 
         auto description = findPluginDescription(tempPluginFile, formatManager);
         auto instance    = createInstance(description, formatManager, 44100.0, 512);
 
-        showEditorWindow(instance.get(), description.name);
+        auto window = createAndShowEditorWindow(instance.get(), description.name);
+        
+        HotReloadThread hotReloadThread(pluginFile);
+        hotReloadThread.onPluginChangeDetected = [&]
+        {
+            juce::MessageManager::callSync([&]
+            {
+                try
+                {
+                    // Copy plugin to temp with a random hash appended
+                    auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
+                    auto description    = findPluginDescription(tempPluginFile, formatManager);
+                    auto reloadInstance = createInstance(description, formatManager, 44100.0, 512);
+                    auto* editor        = reloadInstance->createEditor();
+                    
+                    window->setContentOwned(editor, true);
+                    
+                    instance.reset();                     // delete original instance
+                    instance = std::move(reloadInstance); // replace with new instance
+                }
+                catch(const std::exception& e)
+                {
+                    juce::Logger::writeToLog(e.what());
+                    // Failed to reload plugin...
+                }
+            });
+        };
         
         // Run indefinitely
         juce::MessageManager::getInstance()->runDispatchLoop();
