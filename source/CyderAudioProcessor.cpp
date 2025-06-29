@@ -128,6 +128,9 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         juce::AudioProcessor::setTypeOfNextNewPlugin(wrapperType_VST3);
         
         auto description  = Utilities::findPluginDescription(tempPluginFile, formatManager);
+        description.numInputChannels  = getTotalNumInputChannels();
+        description.numOutputChannels = getTotalNumOutputChannels();
+        
         auto instance     = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
         auto editor       = instance->createEditor();
         auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
