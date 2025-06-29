@@ -132,7 +132,11 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
         // Make sure nothing above threw exception before swapping out current members
         
-        if (hotReloadThread != nullptr)
+        auto currentThreadID = juce::Thread::getCurrentThreadId();
+        bool calledFromHotReloadThread = (hotReloadThread == nullptr) ? false
+                                                                      : (currentThreadID != hotReloadThread->getThreadId());
+        if (hotReloadThread != nullptr
+            && ! calledFromHotReloadThread)
             hotReloadThread->stopThread(1000);
         
         cyderEditor->unloadWrappedEditor();
@@ -146,31 +150,24 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         
         cyderEditor->loadWrappedEditorFromProcessor();
         
-        hotReloadThread = std::make_unique<HotReloadThread>(pluginFile);
-//        hotReloadThread->onPluginChangeDetected = [&]
-//        {
-//            juce::MessageManager::callSync([&]
-//            {
-//                try
-//                {
-//                    // Copy plugin to temp with a random hash appended
-//                    auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
-//                    auto description    = Utilities::findPluginDescription(tempPluginFile, formatManager);
-//                    auto reloadInstance = Utilities::createInstance(description, formatManager, 44100.0, 512);
-//                    auto* editor        = reloadInstance->createEditor();
-//                    
-//                    window->setContentOwned(editor, true);
-//                    
-//                    wrappedPlugin.reset();                     // delete original instance
-//                    wrappedPlugin = std::move(reloadInstance); // replace with new instance
-//                }
-//                catch(const std::exception& e)
-//                {
-//                    juce::Logger::writeToLog(e.what());
-//                    // Failed to reload plugin...
-//                }
-//            });
-//        };
+        if (! calledFromHotReloadThread)
+            hotReloadThread = std::make_unique<HotReloadThread>(pluginFile);
+        
+        hotReloadThread->onPluginChangeDetected = [&]
+        {
+            juce::MessageManager::callSync([&]
+            {
+                try
+                {
+                    loadPlugin(hotReloadThread->getFullPluginPath());
+                }
+                catch(const std::exception& e)
+                {
+                    juce::Logger::writeToLog(e.what());
+                    // Failed to reload plugin...
+                }
+            });
+        };
     }
     catch(const std::exception& e)
     {

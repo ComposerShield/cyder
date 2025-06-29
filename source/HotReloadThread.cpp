@@ -63,3 +63,8 @@ void HotReloadThread::run()
         juce::Thread::wait(pollIntervalMs);
     }
 }
+
+juce::String HotReloadThread::getFullPluginPath() const noexcept
+{
+    return pluginToReload.getFullPathName();
+}

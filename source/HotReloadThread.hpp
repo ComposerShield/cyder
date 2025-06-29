@@ -17,6 +17,8 @@ public:
     
     std::function<void()> onPluginChangeDetected = nullptr;
     
+    juce::String getFullPluginPath() const noexcept;
+    
 private:
     const juce::File pluginToReload;
     juce::Time lastTimePluginWasModified;
