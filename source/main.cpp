@@ -1,4 +1,6 @@
 
+#if (CYDER_BUILD_COMMAND_LINE_APP==1)
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
@@ -70,3 +72,5 @@ int main(int argc, char* argv[])
     }
     return 0;
 }
+
+#endif // CYDER_BUILD_COMMAND_LINE_APP==1

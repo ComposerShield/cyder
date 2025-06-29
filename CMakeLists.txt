@@ -9,8 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add JUCE from the extern directory
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
-# Create a console application target
-juce_add_console_app(Cyder_App
+# Create a plugin target
+juce_add_plugin(Cyder_App
+    FORMATS VST3 Standalone
     PRODUCT_NAME "Cyder"
 )
 
@@ -48,6 +49,10 @@ target_link_libraries(Cyder_App
         juce::juce_audio_processors
         juce::juce_core
         juce::juce_graphics
+
+        # required to compile/link standalone
+        juce_audio_utils
+        juce_audio_devices
 )
 
 target_compile_definitions(Cyder_App 
@@ -62,6 +67,7 @@ target_compile_definitions(Cyder_App
         JUCE_PLUGINHOST_VST3=1
         JUCE_PLUGINHOST_VST=0
         JUCE_PLUGINHOST_ARA=0
+        JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_USE_CAMERA=0
         JUCE_USE_CDBURNER=0
         JUCE_USE_CDREADER=0

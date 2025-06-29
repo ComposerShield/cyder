@@ -9,6 +9,12 @@ class CyderAudioProcessor : public juce::AudioProcessor
 public:
     CyderAudioProcessor();
     ~CyderAudioProcessor() override;
+    
+    //==============================================================================
+    
+    bool loadPlugin(const juce::String& pluginPath);
+    
+    //==============================================================================
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;

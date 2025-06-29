@@ -1,6 +1,7 @@
 #include "CyderAudioProcessor.hpp"
 
 #include "CyderAudioProcessorEditor.hpp"
+#include "Utilities.hpp"
 
 //==============================================================================
 CyderAudioProcessor::CyderAudioProcessor()
@@ -104,6 +105,12 @@ void CyderAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+}
+
+bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
+{
+    
+    return true;
 }
 
 //==============================================================================
