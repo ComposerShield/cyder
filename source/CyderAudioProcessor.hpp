@@ -58,5 +58,7 @@ private:
     
     std::unique_ptr<HotReloadThread> hotReloadThread;
     
+    void transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CyderAudioProcessor)
 };

@@ -135,6 +135,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         // Make sure nothing above threw exception before swapping out current members
         
         currentPluginFile = pluginFile;
+        if (reloadingSamePlugin)
+            transferPluginState(*instance);
         
         if (hotReloadThread != nullptr)
             hotReloadThread->stopThread(1000); // don't hot reload while we're loading
@@ -180,6 +182,14 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept
 {
     return wrappedPluginEditor.get();
+}
+
+void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept
+{
+    juce::MemoryBlock memoryBlock;
+    wrappedPlugin->getStateInformation(memoryBlock);
+    destinationProcessor.setStateInformation(memoryBlock.getData(),
+                                             static_cast<int>(memoryBlock.getSize()));
 }
 
 //==============================================================================
