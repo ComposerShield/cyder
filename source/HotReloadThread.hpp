@@ -18,7 +18,7 @@ public:
     std::function<void()> onPluginChangeDetected = nullptr;
     
 private:
-    const juce::File& pluginToReload;
+    const juce::File pluginToReload;
     juce::Time lastTimePluginWasModified;
     
     void run() override;

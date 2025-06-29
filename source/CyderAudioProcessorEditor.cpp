@@ -14,6 +14,7 @@ CyderAudioProcessorEditor::CyderAudioProcessorEditor(CyderAudioProcessor& p)
 
 CyderAudioProcessorEditor::~CyderAudioProcessorEditor()
 {
+    unloadWrappedEditor();
 }
 
 void CyderAudioProcessorEditor::paint(juce::Graphics& g)
@@ -21,6 +22,12 @@ void CyderAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillAll(juce::Colours::grey);
     g.setColour(juce::Colours::white);
     g.drawText("Drag VST3 plugin here.", getLocalBounds(), juce::Justification::centred);
+    
+    if (fileDraggingOverEditor)
+    {
+        g.setColour(juce::Colours::pink.withAlpha(0.5f));
+        g.fillAll();
+    }
 }
 
 void CyderAudioProcessorEditor::resized()
@@ -35,8 +42,43 @@ bool CyderAudioProcessorEditor::isInterestedInFileDrag(const juce::StringArray& 
 
 void CyderAudioProcessorEditor::filesDropped(const juce::StringArray& files, int /*x*/, int /*y*/)
 {
+    unloadWrappedEditor();
+    
+    fileDraggingOverEditor = false;
+    
     const auto& pluginString = files[0];
     auto result = processor.loadPlugin(pluginString);
     jassert(result);
+    
+    loadWrappedEditorFromProcessor();
 }
 
+void CyderAudioProcessorEditor::fileDragEnter(const juce::StringArray& files, int /*x*/, int /*y*/)
+{
+    fileDraggingOverEditor = true;
+    repaint();
+}
+
+void CyderAudioProcessorEditor::fileDragExit(const juce::StringArray& files)
+{
+    fileDraggingOverEditor = false;
+    repaint();
+}
+
+void CyderAudioProcessorEditor::unloadWrappedEditor()
+{
+    auto* editor = processor.getWrappedPluginEditor();
+    if (editor != nullptr)
+        removeChildComponent(editor);
+}
+
+void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
+{
+    auto* editor = processor.getWrappedPluginEditor();
+    if (editor != nullptr)
+    {
+        setSize(editor->getWidth(), editor->getHeight());
+        addAndMakeVisible(editor);
+        editor->setTopLeftPosition(0, 0);
+    }
+}

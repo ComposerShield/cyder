@@ -83,3 +83,11 @@ target_compile_definitions(Cyder_App
         # deploy to older versions of macOS/iOS.
         JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
 )
+
+# Disable macOS App Sandbox and Hardened Runtime for the standalone
+if (APPLE)
+    set_target_properties(Cyder_App PROPERTIES
+        XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO"
+        XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "NO"
+    )
+endif()

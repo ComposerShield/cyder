@@ -1,6 +1,7 @@
 #include "CyderAudioProcessor.hpp"
 
 #include "CyderAudioProcessorEditor.hpp"
+#include "HotReloadThread.hpp"
 #include "Utilities.hpp"
 
 //==============================================================================
@@ -16,6 +17,7 @@ CyderAudioProcessor::CyderAudioProcessor()
      )
 #endif
 {
+    formatManager.addDefaultFormats();
 }
 
 CyderAudioProcessor::~CyderAudioProcessor()
@@ -37,8 +39,9 @@ bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) co
 
 void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ScopedNoDenormals noDenormals;
-    buffer.clear();
+    std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
+//    if (wrappedPluginMutex != nullptr)
+//        wrappedPluginMutex->processBlock(buffer);
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::createEditor()
@@ -109,8 +112,78 @@ void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes
 
 bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 {
+    try
+    {
+        juce::ScopedJuceInitialiser_GUI libraryInitialiser;
+        juce::File pluginFile(pluginPath);
+        // Copy plugin to temp with a random hash appended
+        auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
+        
+        const auto sampleRate = getSampleRate();
+        const auto blockSize  = getBlockSize();
+
+        // Only supporting VST3
+        juce::AudioProcessor::setTypeOfNextNewPlugin(wrapperType_VST3);
+        
+        auto description  = Utilities::findPluginDescription(tempPluginFile, formatManager);
+        auto instance     = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
+        auto editor       = instance->createEditor();
+        auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
+
+        // Make sure nothing above threw exception before swapping out current members
+        
+        if (hotReloadThread != nullptr)
+            hotReloadThread->stopThread(1000);
+        
+        cyderEditor->unloadWrappedEditor();
+        wrappedPluginEditor.reset();
+        
+        {
+            std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
+            wrappedPlugin.reset(instance.release());
+        }
+        wrappedPluginEditor.reset(std::move(editor));
+        
+        cyderEditor->loadWrappedEditorFromProcessor();
+        
+        hotReloadThread = std::make_unique<HotReloadThread>(pluginFile);
+//        hotReloadThread->onPluginChangeDetected = [&]
+//        {
+//            juce::MessageManager::callSync([&]
+//            {
+//                try
+//                {
+//                    // Copy plugin to temp with a random hash appended
+//                    auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
+//                    auto description    = Utilities::findPluginDescription(tempPluginFile, formatManager);
+//                    auto reloadInstance = Utilities::createInstance(description, formatManager, 44100.0, 512);
+//                    auto* editor        = reloadInstance->createEditor();
+//                    
+//                    window->setContentOwned(editor, true);
+//                    
+//                    wrappedPlugin.reset();                     // delete original instance
+//                    wrappedPlugin = std::move(reloadInstance); // replace with new instance
+//                }
+//                catch(const std::exception& e)
+//                {
+//                    juce::Logger::writeToLog(e.what());
+//                    // Failed to reload plugin...
+//                }
+//            });
+//        };
+    }
+    catch(const std::exception& e)
+    {
+        juce::Logger::writeToLog(e.what());
+        return false;
+    }
     
     return true;
+}
+
+juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept
+{
+    return wrappedPluginEditor.get();
 }
 
 //==============================================================================

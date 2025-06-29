@@ -4,6 +4,10 @@
 
 //==============================================================================
 
+class HotReloadThread;
+
+//==============================================================================
+
 class CyderAudioProcessor : public juce::AudioProcessor
 {
 public:
@@ -13,6 +17,7 @@ public:
     //==============================================================================
     
     bool loadPlugin(const juce::String& pluginPath);
+    juce::AudioProcessorEditor* getWrappedPluginEditor() const noexcept;
     
     //==============================================================================
 
@@ -41,9 +46,16 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
-private:
     
+private:
+    juce::AudioPluginFormatManager formatManager;
+    
+    std::mutex wrappedPluginMutex;
+    
+    std::unique_ptr<juce::AudioPluginInstance>  wrappedPlugin;
+    std::unique_ptr<juce::AudioProcessorEditor> wrappedPluginEditor;
+    
+    std::unique_ptr<HotReloadThread> hotReloadThread;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CyderAudioProcessor)
 };
