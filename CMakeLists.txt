@@ -9,9 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add JUCE from the extern directory
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
-# Add Official AudioPluginHost target
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/extras/AudioPluginHost")
-
 # Create a console application target
 juce_add_console_app(Cyder_App
     PRODUCT_NAME "Cyder"
@@ -53,10 +50,30 @@ target_link_libraries(Cyder_App
         juce::juce_graphics
 )
 
-# Copy compile flags from the JUCE AudioPluginHost target
-get_target_property(_APH_COMPILE_OPTIONS AudioPluginHost COMPILE_OPTIONS)
-if(_APH_COMPILE_OPTIONS)
-    target_compile_options(Cyder_App PRIVATE ${_APH_COMPILE_OPTIONS})
-else()
-    message(WARNING "AudioPluginHost target has no COMPILE_OPTIONS to propagate")
-endif()
+target_compile_definitions(Cyder_App 
+    PRIVATE
+        # Copied from JUCE AudioPluginHost
+        JUCE_ALSA=1
+        JUCE_CONTENT_SHARING=1
+        JUCE_DIRECTSOUND=1
+        JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING=1
+        JUCE_PLUGINHOST_LADSPA=1
+        JUCE_PLUGINHOST_LV2=1
+        JUCE_PLUGINHOST_VST3=1
+        JUCE_PLUGINHOST_VST=0
+        JUCE_PLUGINHOST_ARA=0
+        JUCE_USE_CAMERA=0
+        JUCE_USE_CDBURNER=0
+        JUCE_USE_CDREADER=0
+        JUCE_USE_CURL=0
+        JUCE_USE_FLAC=0
+        JUCE_USE_OGGVORBIS=1
+        JUCE_VST3_HOST_CROSS_PLATFORM_UID=1
+        JUCE_WASAPI=1
+        JUCE_WEB_BROWSER=0
+        PIP_JUCE_EXAMPLES_DIRECTORY_STRING="${JUCE_SOURCE_DIR}/examples"
+        # This is a temporary workaround to allow builds to complete on Xcode 15.
+        # Add -Wl,-ld_classic to the OTHER_LDFLAGS build setting if you need to
+        # deploy to older versions of macOS/iOS.
+        JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
+)
