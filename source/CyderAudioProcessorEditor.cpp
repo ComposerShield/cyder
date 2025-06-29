@@ -10,6 +10,8 @@ CyderAudioProcessorEditor::CyderAudioProcessorEditor(CyderAudioProcessor& p)
 , processor (p)
 {
     setSize (400, 300);
+    
+    loadWrappedEditorFromProcessor();
 }
 
 CyderAudioProcessorEditor::~CyderAudioProcessorEditor()
