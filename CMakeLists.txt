@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add JUCE from the extern directory
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
+# Add Official AudioPluginHost target
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/extras/AudioPluginHost")
+
 # Create a console application target
 juce_add_console_app(Cyder_App
     PRODUCT_NAME "Cyder"
@@ -49,3 +52,11 @@ target_link_libraries(Cyder_App
         juce::juce_core
         juce::juce_graphics
 )
+
+# Copy compile flags from the JUCE AudioPluginHost target
+get_target_property(_APH_COMPILE_OPTIONS AudioPluginHost COMPILE_OPTIONS)
+if(_APH_COMPILE_OPTIONS)
+    target_compile_options(Cyder_App PRIVATE ${_APH_COMPILE_OPTIONS})
+else()
+    message(WARNING "AudioPluginHost target has no COMPILE_OPTIONS to propagate")
+endif()
