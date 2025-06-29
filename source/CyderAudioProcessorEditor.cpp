@@ -86,6 +86,8 @@ void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
     auto* editor = processor.getWrappedPluginEditor();
     if (editor != nullptr)
     {
+        addAndMakeVisible(editor);
+        
         if (cachedWidth.has_value() && cachedHeight.has_value())
         {
             editor->setSize(std::exchange(cachedWidth,  std::nullopt).value(),
@@ -94,7 +96,6 @@ void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
         else
             setSize(editor->getWidth(), editor->getHeight());
         
-        addAndMakeVisible(editor);
         editor->setTopLeftPosition(0, 0);
         editor->addComponentListener(this);
     }
