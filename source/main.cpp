@@ -56,15 +56,26 @@ int main(int argc, char* argv[])
     }
 
     // Display the plugin's editor in a window
-    if (auto* editor = instance->createEditorIfNeeded())
+    if (auto* editor = instance->createEditor())
     {
-        juce::DocumentWindow window (description.name,
-                                     juce::Colours::lightgrey,
-                                     juce::DocumentWindow::allButtons);
-        window.setUsingNativeTitleBar (true);
-        window.setContentOwned (editor, true);
-        window.centreWithSize (editor->getWidth(), editor->getHeight());
-        window.setVisible (true);
+        int w = editor->getWidth();
+        int h = editor->getHeight();
+        juce::Logger::writeToLog ("Editor initial size: " + juce::String (w) + "x" + juce::String (h));
+        if (w <= 0 || h <= 0)
+        {
+            w = 400; h = 300;
+            editor->setSize (w, h);
+        }
+        auto* window = new juce::DocumentWindow (description.name,
+                                                 juce::Colours::lightgrey,
+                                                 juce::DocumentWindow::allButtons,
+                                                 true);
+        window->setUsingNativeTitleBar (true);
+        window->setContentOwned (editor, true);
+        window->centreWithSize (w, h);
+        window->setVisible (true);
+        window->setTopLeftPosition(0, 0);
+        window->toFront(true);
 
         // Enter the GUI event loop until the window is closed
         juce::MessageManager::getInstance()->runDispatchLoop();
