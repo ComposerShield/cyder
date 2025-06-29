@@ -30,20 +30,6 @@ file(GLOB_RECURSE JUCE_CORE_SOURCES CONFIGURE_DEPENDS
 )
 source_group("JUCE Modules" FILES ${JUCE_CORE_SOURCES})
 
-# Collect all AudioPluginHost sources
-file(GLOB_RECURSE AUDIO_PLUGIN_HOST_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/extras/AudioPluginHost/Source/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/extras/AudioPluginHost/Source/*.h"
-)
-source_group("AudioPluginHost" FILES ${AUDIO_PLUGIN_HOST_SOURCES})
-
-# Build AudioPluginHost as a static library
-add_library(CyderAudioPluginHost STATIC ${AUDIO_PLUGIN_HOST_SOURCES})
-target_include_directories(CyderAudioPluginHost
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/extras/AudioPluginHost/Source"
-)
-
 # Specify your source file(s)
 target_sources(Cyder_App
     PRIVATE
@@ -59,7 +45,6 @@ target_include_directories(Cyder_App
 # Link against JUCE core module
 target_link_libraries(Cyder_App
     PRIVATE
-        CyderAudioPluginHost
         juce::juce_audio_processors
         juce::juce_core
         juce::juce_graphics
