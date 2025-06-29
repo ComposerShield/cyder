@@ -1,35 +1,13 @@
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 #include <juce_graphics/juce_graphics.h>
 
+#include "HotReloadThread.hpp"
+#include "Utilities.hpp"
+
 #include <stdexcept>
-
-/**
- * @brief Copies the plugin file to a temporary directory, appending a random UUID to its name.
- * @param originalFile The original plugin File.
- * @return juce::File pointing to the newly copied plugin.
- * @throws std::runtime_error if the copy operation fails.
- */
-[[nodiscard]] static juce::File copyPluginToTempWithHash(const juce::File& originalFile)
-{
-    // Create or reuse a temp subdirectory for copied plugins
-    auto tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory)
-                       .getChildFile("CyderPlugins");
-    tempDir.createDirectory();
-
-    // Generate a random UUID and build new filename
-    auto uuid      = juce::Uuid().toString();
-    auto baseName  = originalFile.getFileNameWithoutExtension();
-    auto ext       = originalFile.getFileExtension(); // includes leading dot
-    auto destFile  = tempDir.getChildFile (baseName + "_" + uuid + ext);
-
-    // Copy and verify
-    if (! originalFile.copyFileTo(destFile))
-        throw std::runtime_error(("Failed to copy plugin to: " + destFile.getFullPathName()).toStdString());
-
-    return destFile;
-}
 
 /**
  * @brief Parses command-line arguments and returns the plugin file path.
@@ -114,7 +92,6 @@ static void showEditorWindow(juce::AudioPluginInstance* instance,
     window->centreWithSize(w, h);
     window->setVisible(true);
     window->setTopLeftPosition(0, 0);
-    juce::MessageManager::getInstance()->runDispatchLoop();
 }
 
 /**
@@ -130,15 +107,20 @@ int main(int argc, char* argv[])
         juce::ScopedJuceInitialiser_GUI libraryInitialiser;
         auto pluginFile = parsePluginFilePath(argc, argv);
         // Copy plugin to temp with a random hash appended
-        auto tempPluginFile = copyPluginToTempWithHash(pluginFile);
+        auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
 
         juce::AudioPluginFormatManager formatManager;
         formatManager.addDefaultFormats();
+        
+        HotReloadThread hotReloadThread(pluginFile);
 
         auto description = findPluginDescription(tempPluginFile, formatManager);
         auto instance    = createInstance(description, formatManager, 44100.0, 512);
 
         showEditorWindow(instance.get(), description.name);
+        
+        // Run indefinitely
+        juce::MessageManager::getInstance()->runDispatchLoop();
     }
     catch(const std::exception& e)
     {
