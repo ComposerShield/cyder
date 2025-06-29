@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(Cyder VERSION 0.1.0 LANGUAGES CXX)
+project(Cyder VERSION 0.1.0 LANGUAGES C CXX)
 
 # Use C++20
 set(CMAKE_CXX_STANDARD 20)
