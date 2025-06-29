@@ -1,6 +1,8 @@
 
 #include "HotReloadThread.hpp"
 
+//==============================================================================
+
 /** Helper to get the latest modification time of a file or any of its children. */
 [[nodiscard]] static juce::Time getLatestModificationTime(const juce::File& file) noexcept
 {

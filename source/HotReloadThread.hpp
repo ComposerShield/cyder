@@ -6,6 +6,8 @@
 
 #include <functional>
 
+//==============================================================================
+
 /** */
 class HotReloadThread final : public juce::Thread
 {
