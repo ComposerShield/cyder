@@ -17,6 +17,8 @@
 #include "CyderAudioProcessor.hpp"
 #include "CyderHeaderBar.hpp"
 
+#include <memory>
+
 static constexpr int headerBarHeight = 22;
 
 //==============================================================================

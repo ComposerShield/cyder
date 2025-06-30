@@ -18,6 +18,8 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_core/juce_core.h>
 
+#include <memory>
+
 //==============================================================================
 
 class Utilities final

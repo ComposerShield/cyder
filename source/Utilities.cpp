@@ -14,6 +14,8 @@
 
 #include "Utilities.hpp"
 
+#include <memory>
+
 //==============================================================================
 
 juce::File Utilities::copyPluginToTempWithHash(const juce::File& originalFile) noexcept(false)

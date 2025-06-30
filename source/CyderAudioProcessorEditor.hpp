@@ -17,6 +17,8 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <memory>
+
 //==============================================================================
 
 class CyderAudioProcessor;
@@ -30,7 +32,7 @@ class CyderAudioProcessorEditor
 , private juce::ComponentListener
 {
 public:
-    CyderAudioProcessorEditor (CyderAudioProcessor&);
+    explicit CyderAudioProcessorEditor(CyderAudioProcessor&);
     ~CyderAudioProcessorEditor() override;
 
     void resized() override;
@@ -48,12 +50,12 @@ private:
     
     bool fileDraggingOverEditor = false;
     
-    void paint (juce::Graphics& g) override;
+    void paint(juce::Graphics& g) override;
     
     bool isInterestedInFileDrag(const juce::StringArray& files) override;
     void filesDropped(const juce::StringArray& files, int x, int y) override;
-    void fileDragEnter (const juce::StringArray& files, int x, int y) override;
-    void fileDragExit (const juce::StringArray& files) override;
+    void fileDragEnter(const juce::StringArray& files, int x, int y) override;
+    void fileDragExit(const juce::StringArray& files) override;
     
     void componentMovedOrResized(juce::Component& component,
                                  bool wasMoved,

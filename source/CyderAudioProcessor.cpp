@@ -18,6 +18,10 @@
 #include "HotReloadThread.hpp"
 #include "Utilities.hpp"
 
+#include <limits>
+#include <memory>
+#include <utility>
+
 //==============================================================================
 CyderAudioProcessor::CyderAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -122,11 +126,11 @@ int CyderAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void CyderAudioProcessor::setCurrentProgram (int /*index*/)
+void CyderAudioProcessor::setCurrentProgram(int /*index*/) // NOLINT (false positive)
 {
 }
 
-const juce::String CyderAudioProcessor::getProgramName (int /*index*/)
+const juce::String CyderAudioProcessor::getProgramName(int /*index*/) // NOLINT (false positive)
 {
     return {};
 }

@@ -16,6 +16,8 @@
 
 #include "CyderAudioProcessor.hpp"
 
+#include <memory>
+
 //==============================================================================
 
 class CyderHeaderBarLookAndFeel : public juce::LookAndFeel_V4
