@@ -1,0 +1,51 @@
+name: Build Cyder
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  mac-15-build-xcode:
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+        
+      - name: Select Xcode 16.2
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
+
+      - name: Configure CMake (Xcode generator)
+        run: cmake . -B build -G Xcode
+
+      - name: Build
+        run: cmake --build build --config Release --target Cyder_App
+        
+#      - name: Run Unit Tests
+#        run: |
+#          cd build
+#          ctest -C Release
+
+  windows-11-build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Configure CMake (Visual Studio generator)
+        run: cmake . -B build -G "Visual Studio 17 2022"
+
+      - name: Build (parallel)
+        run: cmake --build build --config Release --target Cyder_App -- /m
+
+#      - name: Run Unit Tests
+#        run: |
+#          cd build
+#          ctest -C Release
