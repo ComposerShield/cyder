@@ -40,6 +40,9 @@ CyderAudioProcessor::CyderAudioProcessor()
 
 CyderAudioProcessor::~CyderAudioProcessor()
 {
+    if (hotReloadThread != nullptr)
+        hotReloadThread->stopThread(1000);
+    unloadPlugin();
 }
 
 void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -238,10 +241,9 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
 void CyderAudioProcessor::unloadPlugin()
 {
-    auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
-    jassert(cyderEditor != nullptr);
+    if (auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor()))
+        cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ false);
     
-    cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ false);
     wrappedPluginEditor.reset();
     
     {
