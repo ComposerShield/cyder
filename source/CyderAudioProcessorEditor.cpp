@@ -70,7 +70,7 @@ void CyderAudioProcessorEditor::filesDropped(const juce::StringArray& files, int
     fileDraggingOverEditor = false;
     
     const auto& pluginString = files[0];
-    auto result = processor.loadPlugin(pluginString);
+    [[maybe_unused]] auto result = processor.loadPlugin(pluginString);
     jassert(result);
     
     loadWrappedEditorFromProcessor();
