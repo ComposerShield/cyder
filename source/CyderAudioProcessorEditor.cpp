@@ -61,13 +61,13 @@ void CyderAudioProcessorEditor::filesDropped(const juce::StringArray& files, int
     loadWrappedEditorFromProcessor();
 }
 
-void CyderAudioProcessorEditor::fileDragEnter(const juce::StringArray& files, int /*x*/, int /*y*/)
+void CyderAudioProcessorEditor::fileDragEnter(const juce::StringArray& /*files*/, int /*x*/, int /*y*/)
 {
     fileDraggingOverEditor = true;
     repaint();
 }
 
-void CyderAudioProcessorEditor::fileDragExit(const juce::StringArray& files)
+void CyderAudioProcessorEditor::fileDragExit(const juce::StringArray& /*files*/)
 {
     fileDraggingOverEditor = false;
     repaint();

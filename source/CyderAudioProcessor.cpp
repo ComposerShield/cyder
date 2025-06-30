@@ -49,7 +49,7 @@ void CyderAudioProcessor::releaseResources()
     wrappedPlugin->releaseResources();
 }
 
-bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& /*layouts*/) const
 {
     return true;
 }
@@ -108,16 +108,16 @@ int CyderAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void CyderAudioProcessor::setCurrentProgram (int index)
+void CyderAudioProcessor::setCurrentProgram (int /*index*/)
 {
 }
 
-const juce::String CyderAudioProcessor::getProgramName (int index)
+const juce::String CyderAudioProcessor::getProgramName (int /*index*/)
 {
     return {};
 }
 
-void CyderAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void CyderAudioProcessor::changeProgramName (int /*index*/, const juce::String& /*newName*/)
 {
 }
 

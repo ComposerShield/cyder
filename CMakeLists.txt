@@ -113,3 +113,17 @@ if (APPLE)
         XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "NO"
     )
 endif()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+    OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+
+  # Enable most warnings, upgrade to errors
+  target_compile_options(Cyder_App 
+    PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror
+  )
+
+endif()

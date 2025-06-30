@@ -78,5 +78,5 @@ std::unique_ptr<juce::DocumentWindow> Utilities::createAndShowEditorWindow(juce:
     window->setVisible(true);
     window->setTopLeftPosition(0, 0);
     
-    return std::move(window);
+    return window;
 }
