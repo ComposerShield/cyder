@@ -14,7 +14,8 @@ juce_add_plugin(Cyder_App
     PRODUCT_NAME "Cyder"
     FORMATS VST3 Standalone
     
-    COPY_PLUGIN_AFTER_BUILD FALSE
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    VST3_COPY_DIR "${CMAKE_SOURCE_DIR}"
 
     COMPANY_NAME "Cyder"
     COMPANY_COPYRIGHT "Copyright (c) 2025"
