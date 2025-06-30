@@ -17,6 +17,8 @@ public:
     //==============================================================================
     
     bool loadPlugin(const juce::String& pluginPath);
+    void unloadPlugin();
+    
     juce::AudioProcessorEditor* getWrappedPluginEditor() const noexcept;
     
     //==============================================================================
