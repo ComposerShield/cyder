@@ -39,11 +39,19 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Configure CMake (Visual Studio generator)
-        run: cmake . -B build -G "Visual Studio 17 2022"
+      - name: Cache CMake build
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
 
-      - name: Build
-        run: cmake --build build --config Release --target Cyder_App
+      - name: Configure CMake (Ninja generator)
+        run: cmake . -B build -G Ninja
+
+      - name: Build (parallel)
+        run: cmake --build build --config Release -- -j %NUMBER_OF_PROCESSORS%
 
 #      - name: Run Unit Tests
 #        run: |
