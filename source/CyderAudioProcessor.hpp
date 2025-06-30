@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Cyder — Hot-Reloading Audio Plugin Wrapper
+ *
+ * @file     CyderAudioProcessor.hpp
+ *
+ * @author   Adam Shield
+ * @date     2025-06-29
+ *
+ * @copyright (c) 2025 Adam Shield
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * See LICENSE.txt for license terms.
+ ******************************************************************************/
+
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
