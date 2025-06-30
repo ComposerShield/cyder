@@ -49,3 +49,15 @@ jobs:
 #        run: |
 #          cd build
 #          ctest -C Release
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install cpplint
+        run: pip3 install cpplint
+
+      - name: Run CPPLint
+        run: ./runCpplint.sh
