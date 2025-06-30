@@ -218,6 +218,20 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     return true;
 }
 
+void CyderAudioProcessor::unloadPlugin()
+{
+    auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
+    jassert(cyderEditor != nullptr);
+    
+    cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ false);
+    wrappedPluginEditor.reset();
+    
+    {
+        std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
+        wrappedPlugin.reset();
+    }
+}
+
 juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept
 {
     return wrappedPluginEditor.get();

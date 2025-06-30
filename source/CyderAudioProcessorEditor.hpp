@@ -7,6 +7,7 @@
 //==============================================================================
 
 class CyderAudioProcessor;
+class CyderHeaderBar;
 
 //==============================================================================
 
@@ -26,6 +27,8 @@ public:
 
 private:
     CyderAudioProcessor& processor;
+    
+    std::unique_ptr<CyderHeaderBar> headerBar;
     
     std::optional<int> cachedWidth;
     std::optional<int> cachedHeight;
