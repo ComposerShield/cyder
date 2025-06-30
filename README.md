@@ -24,5 +24,18 @@ cmake . -B build
 cmake --build build
 ```
 
+## Installing the plugin
+
+### macOS
+```bash
+sudo cp -R Cyder.vst3 /Library/Audio/Plug-Ins/VST3/
+```
+
+### Windows
+Open a Command Prompt as administrator and run:
+```cmd
+xcopy /E /I Cyder.vst3 "C:\Program Files\Common Files\VST3\"
+```
+
 ## License
 See [LICENSE.txt](LICENSE.txt) for license information.
