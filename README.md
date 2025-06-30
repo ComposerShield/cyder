@@ -1,6 +1,6 @@
 # Cyder
 
-A "stupid-simple" command-line application for running audio plugins with hot reloading.
+An FX audio plugin wrapper that enables "hot-reloading" of the wrapped plugin.
 
 ## Prerequisites
 - CMake (>= 3.10)
