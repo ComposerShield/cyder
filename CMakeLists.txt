@@ -2,6 +2,40 @@ cmake_minimum_required(VERSION 3.15)
 
 project(Cyder VERSION 0.1.0 LANGUAGES C CXX)
 
+# Download and configure GoogleTest
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# Unit tests
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
+)
+
+source_group("tests" FILES ${TEST_SOURCES})
+
+add_executable(Cyder_Tests ${TEST_SOURCES})
+
+target_link_libraries(Cyder_Tests
+    PRIVATE
+        GTest::gtest_main
+        juce::juce_audio_processors
+        juce::juce_core
+        juce::juce_graphics
+)
+
+target_include_directories(Cyder_Tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/source"
+    "${CMAKE_CURRENT_SOURCE_DIR}/extern"
+)
+
+add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
+
 # Use C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -128,3 +162,5 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
   )
 
 endif()
+
+
