@@ -38,16 +38,6 @@ juce::File Utilities::copyPluginToTempWithHash(const juce::File& originalFile) n
     return destFile;
 }
 
-juce::File Utilities::parsePluginFilePath(int argc, char* argv[]) noexcept(false)
-{
-    juce::StringArray args;
-    for (int i = 0; i < argc; ++i)
-        args.add (argv[i]);
-    if (args.size() < 2)
-        throw std::runtime_error(("Usage: " + args[0] + " <path-to-plugin>").toStdString());
-    return juce::File (args[1]);
-}
-
 juce::PluginDescription Utilities::findPluginDescription(const juce::File& pluginFile,
                                                          juce::AudioPluginFormatManager& formatManager) noexcept(false)
 {
