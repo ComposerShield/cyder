@@ -173,5 +173,5 @@ add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
 
 # Helper target to specify what all to build from pipeline
 add_custom_target(Cyder_All
-  DEPENDS Cyder_App Cyder_Tests
+  DEPENDS Cyder_Plugin_VST3 Cyder_Tests
 )
