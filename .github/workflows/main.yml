@@ -17,6 +17,9 @@ jobs:
       - name: Install ccache
         run: brew install ccache
 
+      - name: Ensure ccache dir exists
+        run: mkdir -p ~/.ccache
+
       - name: Restore ccache
         uses: actions/cache@v3
         with:
@@ -61,6 +64,10 @@ jobs:
 
       - name: Install ccache
         run: choco install ccache -y
+
+      - name: Ensure ccache dir exists
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path "$Env:USERPROFILE\\.ccache"
 
       - name: Restore ccache
         uses: actions/cache@v3
