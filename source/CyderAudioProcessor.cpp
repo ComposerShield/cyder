@@ -198,7 +198,8 @@ void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes
             juce::Base64::convertFromBase64(stream, base64Data);
         }
         if (wrappedPlugin != nullptr)
-            wrappedPlugin->setStateInformation(pluginData.getData(), (int)pluginData.getSize());
+            wrappedPlugin->setStateInformation(pluginData.getData(),
+                                               static_cast<int>(pluginData.getSize()));
     }
 }
 
