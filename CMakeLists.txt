@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
 # Create a plugin target
-juce_add_plugin(Cyder_App
+juce_add_plugin(Cyder_Plugin
     PRODUCT_NAME "Cyder"
     FORMATS VST3 Standalone
     
@@ -55,19 +55,19 @@ file(GLOB_RECURSE JUCE_CORE_SOURCES CONFIGURE_DEPENDS
 source_group("JUCE Modules" FILES ${JUCE_CORE_SOURCES})
 
 # Specify your source file(s)
-target_sources(Cyder_App
+target_sources(Cyder_Plugin
     PRIVATE
         ${SOURCE_FILES}
 )
 
 # Expose the extern folder for header includes
-target_include_directories(Cyder_App
+target_include_directories(Cyder_Plugin
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/extern"
 )
 
 # Link against JUCE core module
-target_link_libraries(Cyder_App
+target_link_libraries(Cyder_Plugin
     PRIVATE
         juce::juce_audio_processors
         juce::juce_core
@@ -78,7 +78,7 @@ target_link_libraries(Cyder_App
         juce_audio_devices
 )
 
-target_compile_definitions(Cyder_App 
+target_compile_definitions(Cyder_Plugin 
     PRIVATE
         # Copied from JUCE AudioPluginHost
         JUCE_ALSA=1
@@ -109,7 +109,7 @@ target_compile_definitions(Cyder_App
 
 # Disable macOS App Sandbox and Hardened Runtime for the standalone
 if (APPLE)
-    set_target_properties(Cyder_App PROPERTIES
+    set_target_properties(Cyder_Plugin PROPERTIES
         XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO"
         XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "NO"
     )
@@ -119,7 +119,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
     OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 
   # Enable most warnings, upgrade to errors
-  target_compile_options(Cyder_App 
+  target_compile_options(Cyder_Plugin 
     PRIVATE
         -Wall
         -Wextra
