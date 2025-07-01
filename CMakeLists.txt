@@ -56,7 +56,8 @@ source_group("JUCE Modules" FILES ${JUCE_CORE_SOURCES})
 
 # Specify your source file(s)
 target_sources(Cyder_Plugin
-    PRIVATE
+    # public so it can be used by unit test executable
+    PUBLIC
         ${SOURCE_FILES}
 )
 
@@ -66,45 +67,53 @@ target_include_directories(Cyder_Plugin
         "${CMAKE_CURRENT_SOURCE_DIR}/extern"
 )
 
+set(CYDER_JUCE_LIBS
+    juce::juce_audio_processors
+    juce_audio_devices
+    juce_audio_utils
+    juce::juce_core
+    juce::juce_graphics
+)
+
 # Link against JUCE core module
 target_link_libraries(Cyder_Plugin
-    PRIVATE
-        juce::juce_audio_processors
-        juce::juce_core
-        juce::juce_graphics
+     # public so it can be used by unit test executable
+    PUBLIC
+        ${CYDER_JUCE_LIBS}
+)
 
-        # required to compile/link standalone
-        juce_audio_utils
-        juce_audio_devices
+set(CYDER_COMPILE_DEFS
+    # Copied from JUCE AudioPluginHost
+    JUCE_ALSA=1
+    JUCE_CONTENT_SHARING=1
+    JUCE_DIRECTSOUND=1
+    JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING=1
+    JUCE_PLUGINHOST_LADSPA=1
+    JUCE_PLUGINHOST_LV2=1
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_VST=0
+    JUCE_PLUGINHOST_ARA=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_USE_CAMERA=0
+    JUCE_USE_CDBURNER=0
+    JUCE_USE_CDREADER=0
+    JUCE_USE_CURL=0
+    JUCE_USE_FLAC=0
+    JUCE_USE_OGGVORBIS=1
+    JUCE_VST3_HOST_CROSS_PLATFORM_UID=1
+    JUCE_WASAPI=1
+    JUCE_WEB_BROWSER=0
+    PIP_JUCE_EXAMPLES_DIRECTORY_STRING="${JUCE_SOURCE_DIR}/examples"
+    # This is a temporary workaround to allow builds to complete on Xcode 15.
+    # Add -Wl,-ld_classic to the OTHER_LDFLAGS build setting if you need to
+    # deploy to older versions of macOS/iOS.
+    JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
 )
 
 target_compile_definitions(Cyder_Plugin 
-    PRIVATE
-        # Copied from JUCE AudioPluginHost
-        JUCE_ALSA=1
-        JUCE_CONTENT_SHARING=1
-        JUCE_DIRECTSOUND=1
-        JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING=1
-        JUCE_PLUGINHOST_LADSPA=1
-        JUCE_PLUGINHOST_LV2=1
-        JUCE_PLUGINHOST_VST3=1
-        JUCE_PLUGINHOST_VST=0
-        JUCE_PLUGINHOST_ARA=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_USE_CAMERA=0
-        JUCE_USE_CDBURNER=0
-        JUCE_USE_CDREADER=0
-        JUCE_USE_CURL=0
-        JUCE_USE_FLAC=0
-        JUCE_USE_OGGVORBIS=1
-        JUCE_VST3_HOST_CROSS_PLATFORM_UID=1
-        JUCE_WASAPI=1
-        JUCE_WEB_BROWSER=0
-        PIP_JUCE_EXAMPLES_DIRECTORY_STRING="${JUCE_SOURCE_DIR}/examples"
-        # This is a temporary workaround to allow builds to complete on Xcode 15.
-        # Add -Wl,-ld_classic to the OTHER_LDFLAGS build setting if you need to
-        # deploy to older versions of macOS/iOS.
-        JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
+    # public so it can be used by unit test executable
+    PUBLIC
+        ${CYDER_COMPILE_DEFS}
 )
 
 # Disable macOS App Sandbox and Hardened Runtime for the standalone
@@ -151,9 +160,7 @@ add_executable(Cyder_Tests ${TEST_SOURCES})
 target_link_libraries(Cyder_Tests
     PRIVATE
         GTest::gtest_main
-        juce::juce_audio_processors
-        juce::juce_core
-        juce::juce_graphics
+        Cyder_Plugin
 )
 
 target_include_directories(Cyder_Tests 

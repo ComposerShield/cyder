@@ -1,11 +1,21 @@
+
 #include <gtest/gtest.h>
 
-// A simple sample test
-TEST(SampleTest, BasicAssertions) {
-    EXPECT_EQ(1 + 1, 2);
-}
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
 
-int main(int argc, char** argv) {
+//==============================================================================
+
+int main(int argc, char** argv)
+{
+    
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+    
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    auto result = RUN_ALL_TESTS();
+    
+    juce::DeletedAtShutdown::deleteAll();
+    juce::MessageManager::deleteInstance(); // must be last
+    
+    return result;
 }
