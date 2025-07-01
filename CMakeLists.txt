@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
 
 # Create a plugin target
-juce_add_plugin(Cyder_App
+juce_add_plugin(Cyder_Plugin
     PRODUCT_NAME "Cyder"
     FORMATS VST3 Standalone
     
@@ -55,61 +55,70 @@ file(GLOB_RECURSE JUCE_CORE_SOURCES CONFIGURE_DEPENDS
 source_group("JUCE Modules" FILES ${JUCE_CORE_SOURCES})
 
 # Specify your source file(s)
-target_sources(Cyder_App
-    PRIVATE
+target_sources(Cyder_Plugin
+    # public so it can be used by unit test executable
+    PUBLIC
         ${SOURCE_FILES}
 )
 
 # Expose the extern folder for header includes
-target_include_directories(Cyder_App
+target_include_directories(Cyder_Plugin
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/extern"
 )
 
-# Link against JUCE core module
-target_link_libraries(Cyder_App
-    PRIVATE
-        juce::juce_audio_processors
-        juce::juce_core
-        juce::juce_graphics
-
-        # required to compile/link standalone
-        juce_audio_utils
-        juce_audio_devices
+set(CYDER_JUCE_LIBS
+    juce::juce_audio_processors
+    juce_audio_devices
+    juce_audio_utils
+    juce::juce_core
+    juce::juce_graphics
 )
 
-target_compile_definitions(Cyder_App 
-    PRIVATE
-        # Copied from JUCE AudioPluginHost
-        JUCE_ALSA=1
-        JUCE_CONTENT_SHARING=1
-        JUCE_DIRECTSOUND=1
-        JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING=1
-        JUCE_PLUGINHOST_LADSPA=1
-        JUCE_PLUGINHOST_LV2=1
-        JUCE_PLUGINHOST_VST3=1
-        JUCE_PLUGINHOST_VST=0
-        JUCE_PLUGINHOST_ARA=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_USE_CAMERA=0
-        JUCE_USE_CDBURNER=0
-        JUCE_USE_CDREADER=0
-        JUCE_USE_CURL=0
-        JUCE_USE_FLAC=0
-        JUCE_USE_OGGVORBIS=1
-        JUCE_VST3_HOST_CROSS_PLATFORM_UID=1
-        JUCE_WASAPI=1
-        JUCE_WEB_BROWSER=0
-        PIP_JUCE_EXAMPLES_DIRECTORY_STRING="${JUCE_SOURCE_DIR}/examples"
-        # This is a temporary workaround to allow builds to complete on Xcode 15.
-        # Add -Wl,-ld_classic to the OTHER_LDFLAGS build setting if you need to
-        # deploy to older versions of macOS/iOS.
-        JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
+# Link against JUCE core module
+target_link_libraries(Cyder_Plugin
+     # public so it can be used by unit test executable
+    PUBLIC
+        ${CYDER_JUCE_LIBS}
+)
+
+set(CYDER_COMPILE_DEFS
+    # Copied from JUCE AudioPluginHost
+    JUCE_ALSA=1
+    JUCE_CONTENT_SHARING=1
+    JUCE_DIRECTSOUND=1
+    JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING=1
+    JUCE_PLUGINHOST_LADSPA=1
+    JUCE_PLUGINHOST_LV2=1
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_VST=0
+    JUCE_PLUGINHOST_ARA=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_USE_CAMERA=0
+    JUCE_USE_CDBURNER=0
+    JUCE_USE_CDREADER=0
+    JUCE_USE_CURL=0
+    JUCE_USE_FLAC=0
+    JUCE_USE_OGGVORBIS=1
+    JUCE_VST3_HOST_CROSS_PLATFORM_UID=1
+    JUCE_WASAPI=1
+    JUCE_WEB_BROWSER=0
+    PIP_JUCE_EXAMPLES_DIRECTORY_STRING="${JUCE_SOURCE_DIR}/examples"
+    # This is a temporary workaround to allow builds to complete on Xcode 15.
+    # Add -Wl,-ld_classic to the OTHER_LDFLAGS build setting if you need to
+    # deploy to older versions of macOS/iOS.
+    JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
+)
+
+target_compile_definitions(Cyder_Plugin 
+    # public so it can be used by unit test executable
+    PUBLIC
+        ${CYDER_COMPILE_DEFS}
 )
 
 # Disable macOS App Sandbox and Hardened Runtime for the standalone
 if (APPLE)
-    set_target_properties(Cyder_App PROPERTIES
+    set_target_properties(Cyder_Plugin PROPERTIES
         XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO"
         XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "NO"
     )
@@ -119,7 +128,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
     OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 
   # Enable most warnings, upgrade to errors
-  target_compile_options(Cyder_App 
+  target_compile_options(Cyder_Plugin 
     PRIVATE
         -Wall
         -Wextra
@@ -128,3 +137,41 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
   )
 
 endif()
+
+# Download and configure GoogleTest
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# Unit test executable
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
+)
+
+source_group("tests" FILES ${TEST_SOURCES})
+
+add_executable(Cyder_Tests ${TEST_SOURCES})
+
+target_link_libraries(Cyder_Tests
+    PRIVATE
+        GTest::gtest_main
+        Cyder_Plugin
+)
+
+target_include_directories(Cyder_Tests 
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/source"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern"
+)
+
+add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
+
+# Helper target to specify what all to build from pipeline
+add_custom_target(Cyder_All
+  DEPENDS Cyder_Plugin_VST3 Cyder_Tests
+)

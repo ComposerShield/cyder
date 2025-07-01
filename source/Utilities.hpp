@@ -32,15 +32,6 @@ public:
      * @throws std::runtime_error if the copy operation fails.
      */
     [[nodiscard]] static juce::File copyPluginToTempWithHash(const juce::File& originalFile) noexcept(false);
-    
-    /**
-     * @brief Parses command-line arguments and returns the plugin file path.
-     * @param argc Number of command-line arguments.
-     * @param argv Array of C-strings holding the arguments.
-     * @return juce::File representing the plugin file.
-     * @throws std::runtime_error if usage is incorrect or the plugin path is missing.
-     */
-    [[nodiscard]] static juce::File parsePluginFilePath(int argc, char* argv[]) noexcept(false);
 
     /**
      * @brief Scans the specified file for a plugin description.
