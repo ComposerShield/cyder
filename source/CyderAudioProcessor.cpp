@@ -146,20 +146,68 @@ void CyderAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (wrappedPlugin == nullptr)
         return;
-    
-    wrappedPlugin->getStateInformation(destData);
+
+    // Build XML root element
+    auto xml = std::make_unique<juce::XmlElement>(JucePlugin_Name);
+    xml->setAttribute("version", JucePlugin_VersionString);
+    xml->setAttribute("pluginFilePath", currentPluginFile.getFullPathName());
+
+    // Serialize wrapped plugin state
+    juce::MemoryBlock pluginData;
+    wrappedPlugin->getStateInformation(pluginData);
+    auto base64Data = juce::Base64::toBase64(pluginData.getData(), pluginData.getSize());
+
+    // Embed the base64-encoded state
+    auto* stateElem = xml->createNewChildElement("WrappedPluginState");
+    stateElem->addTextElement(base64Data);
+
+    // Convert XML to UTF-8 and write into destData
+    auto xmlString = xml->toString();
+    destData.reset();
+    destData.append(xmlString.toRawUTF8(), xmlString.getNumBytesAsUTF8());
 }
 
 void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    if (wrappedPlugin == nullptr)
+    // Parse incoming XML
+    auto xmlString = juce::String::fromUTF8(static_cast<const char*>(data), sizeInBytes);
+    std::unique_ptr<juce::XmlElement> xml { juce::XmlDocument::parse(xmlString) };
+    
+    if (xml == nullptr || ! xml->hasTagName("Cyder"))
         return;
     
-    wrappedPlugin->setStateInformation(data, sizeInBytes);
+    // Restore plugin file path
+    {
+        auto savedPathString = xml->getStringAttribute("pluginFilePath");
+        unloadPlugin();
+        loadPlugin(savedPathString);
+    }
+    
+    if (wrappedPlugin == nullptr) // something went wrong
+        return;
+
+    // Decode and restore wrapped plugin state
+    if (auto* stateElem = xml->getChildByName("WrappedPluginState"))
+    {
+        auto base64Data = stateElem->getAllSubText();
+        juce::MemoryBlock pluginData;
+        {
+            juce::MemoryOutputStream stream(pluginData, false);
+            juce::Base64::convertFromBase64(stream, base64Data);
+        }
+        if (wrappedPlugin != nullptr)
+            wrappedPlugin->setStateInformation(pluginData.getData(),
+                                               static_cast<int>(pluginData.getSize()));
+    }
 }
 
 bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 {
+    // CFBundle does not like it if we attempt to load a dll outside the message thread
+    jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
+    
+    DBG("pluginPath: " << pluginPath);
+    
     try
     {
         juce::ScopedJuceInitialiser_GUI libraryInitialiser;
@@ -174,7 +222,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
         // Only supporting VST3
         juce::AudioProcessor::setTypeOfNextNewPlugin(wrapperType_VST3);
-        
+
         auto description  = Utilities::findPluginDescription(tempPluginFile, formatManager);
         
         description.numInputChannels  = getTotalNumInputChannels();
@@ -200,7 +248,9 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         if (hotReloadThread != nullptr)
             hotReloadThread->stopThread(1000); // don't hot reload while we're loading
         
-        cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ reloadingSamePlugin);
+        if (cyderEditor != nullptr)
+            cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ reloadingSamePlugin);
+        
         wrappedPluginEditor.reset();
         
         {
@@ -210,7 +260,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         }
         wrappedPluginEditor.reset(std::move(editor));
         
-        cyderEditor->loadWrappedEditorFromProcessor();
+        if (cyderEditor != nullptr)
+            cyderEditor->loadWrappedEditorFromProcessor();
         
         hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
         
