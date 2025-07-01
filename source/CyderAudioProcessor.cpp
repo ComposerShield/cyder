@@ -176,20 +176,18 @@ void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes
     if (xml == nullptr || ! xml->hasTagName("Cyder"))
         return;
     
-    auto xmlShared = std::make_shared<juce::XmlElement>(*xml);
-    
     // Restore plugin file path
-    auto savedPathString = xmlShared->getStringAttribute("pluginFilePath");
     {
-        juce::ScopedAutoReleasePool pool;
+        auto savedPathString = xml->getStringAttribute("pluginFilePath");
         unloadPlugin();
         loadPlugin(savedPathString);
-        if (wrappedPlugin == nullptr) // something went wrong
-            return;
     }
+    
+    if (wrappedPlugin == nullptr) // something went wrong
+        return;
 
     // Decode and restore wrapped plugin state
-    if (auto* stateElem = xmlShared->getChildByName("WrappedPluginState"))
+    if (auto* stateElem = xml->getChildByName("WrappedPluginState"))
     {
         auto base64Data = stateElem->getAllSubText();
         juce::MemoryBlock pluginData;
