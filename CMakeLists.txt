@@ -211,6 +211,9 @@ set_target_properties(Cyder_Tests PROPERTIES
     XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
 )
 
+# Some tests require that the VST3 is already built
+add_dependencies(Cyder_Tests Cyder_Plugin_VST3)
+
 add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
 
 # Helper target to specify what all to build from pipeline
