@@ -47,9 +47,9 @@ jobs:
 
       - name: Build
         run: |
-          TOOLCHAIN_PATH="$(xcrun --toolchain default --show-toolchain-path)"
-          echo "Toolchain path: $TOOLCHAIN_PATH"
-          TSAN_LIB="$(find "$TOOLCHAIN_PATH/usr/lib/clang/" -type f -name libclang_rt.tsan_osx_dynamic.dylib | head -n1)"
+          DEV_DIR="$(xcode-select -p)"
+          echo "Developer directory: $DEV_DIR"
+          TSAN_LIB="$(find "$DEV_DIR/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang" -type f -name libclang_rt.tsan_osx_dynamic.dylib | head -n1)"
           echo "TSAN runtime at: $TSAN_LIB"
           if [ ! -f "$TSAN_LIB" ]; then
             echo "Error: ThreadSanitizer runtime not found at $TSAN_LIB"
