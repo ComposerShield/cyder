@@ -47,8 +47,12 @@ jobs:
 
       - name: Build
         run: |
-          TSAN_LIB=$(xcrun --toolchain default --find libclang_rt.tsan_osx_dynamic.dylib)
+          TSAN_LIB="$(find "${DEVELOPER_DIR:-$(xcode-select -p)}"/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/ -maxdepth 2 -type f -name libclang_rt.tsan_osx_dynamic.dylib | head -n1)"
           echo "TSAN runtime at: $TSAN_LIB"
+          if [ ! -f "$TSAN_LIB" ]; then
+            echo "Error: ThreadSanitizer runtime not found at $TSAN_LIB"
+            exit 1
+          fi
           export DYLD_INSERT_LIBRARIES="$TSAN_LIB"
           cmake --build build --config Debug --target Cyder_Tests
         
