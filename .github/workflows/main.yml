@@ -46,7 +46,11 @@ jobs:
         run: cmake . -B build -G Xcode -DENABLE_QITI=ON
 
       - name: Build
-        run: cmake --build build --config Debug --target Cyder_Tests
+        run: |
+          TSAN_LIB=$(xcrun --toolchain default --find libclang_rt.tsan_osx_dynamic.dylib)
+          echo "TSAN runtime at: $TSAN_LIB"
+          export DYLD_INSERT_LIBRARIES="$TSAN_LIB"
+          cmake --build build --config Debug --target Cyder_Tests
         
       - name: Run Unit Tests
         run: |
