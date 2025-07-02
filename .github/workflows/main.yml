@@ -29,8 +29,8 @@ jobs:
           cd build
           ctest -C Release --output-on-failure
           
-  mac-15-build-xcode-qiti:
-    runs-on: macos-15
+  mac-14-build-xcode-qiti:
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
