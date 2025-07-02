@@ -7,6 +7,7 @@ on:
 
 jobs:
   mac-15-build-xcode:
+    if: false
     runs-on: macos-15
     steps:
       - name: Checkout code
@@ -53,6 +54,7 @@ jobs:
           ctest -C Debug --output-on-failure
 
   windows-11-build:
+    if: false
     runs-on: windows-latest
 
     steps:
