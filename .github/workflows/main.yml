@@ -27,6 +27,30 @@ jobs:
         run: |
           cd build
           ctest -C Release --output-on-failure
+          
+  mac-14-build-xcode-qiti:
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Select Xcode 15.4
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      # Build with Qiti instrumentation, including enabling TSan.
+      # Enables additional tests not possible in regular Release builds.
+      - name: Configure CMake (Xcode generator)
+        run: cmake . -B build -G Xcode -DENABLE_QITI=ON
+
+      - name: Build
+        run: cmake --build build --config Debug --target Cyder_Tests
+        
+      - name: Run Unit Tests
+        run: |
+          cd build
+          ctest -C Debug --output-on-failure
 
   windows-11-build:
     runs-on: windows-latest
