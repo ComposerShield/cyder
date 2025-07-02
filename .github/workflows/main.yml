@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
         
       - name: Select Xcode 16.2
         uses: maxim-lobanov/setup-xcode@v1
@@ -36,14 +34,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
 
       - name: Configure CMake (Visual Studio generator)
         run: cmake . -B build -G "Visual Studio 17 2022"
 
       - name: Build (parallel)
-        run: cmake --build build --config Release --target Cyder_All -- /m
+        run: cmake --build build --config Release --parallel 4 --target Cyder_All
 
       - name: Run Unit Tests
         run: |

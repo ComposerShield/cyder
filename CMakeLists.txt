@@ -6,8 +6,14 @@ project(Cyder VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Add JUCE from the extern directory
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/extern/juce")
+# Use JUCE via FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    juce
+    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+    GIT_TAG        8.0.8
+)
+FetchContent_MakeAvailable(juce)
 
 # Create a plugin target
 juce_add_plugin(Cyder_Plugin
@@ -50,7 +56,7 @@ source_group("source" FILES ${SOURCE_FILES})
   
 # Group JUCE core module implementation files under 'JUCE Modules'
 file(GLOB_RECURSE JUCE_CORE_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/extern/juce/modules/juce_core/*.cpp"
+    "${juce_SOURCE_DIR}/modules/juce_core/*.cpp"
 )
 source_group("JUCE Modules" FILES ${JUCE_CORE_SOURCES})
 
@@ -61,10 +67,11 @@ target_sources(Cyder_Plugin
         ${SOURCE_FILES}
 )
 
-# Expose the extern folder for header includes
+# Expose the JUCE modules folder for header includes
+message(STATUS "juce_SOURCE_DIR = ${juce_SOURCE_DIR}")
 target_include_directories(Cyder_Plugin
     PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern"
+        "${juce_SOURCE_DIR}"
 )
 
 set(CYDER_JUCE_LIBS
@@ -159,14 +166,14 @@ add_executable(Cyder_Tests ${TEST_SOURCES})
 
 target_link_libraries(Cyder_Tests
     PRIVATE
-        GTest::gtest_main
+        GTest::gmock_main # also brings in gtest
         Cyder_Plugin
 )
 
 target_include_directories(Cyder_Tests 
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/source"
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern"
+        "${juce_SOURCE_DIR}"
 )
 
 add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
