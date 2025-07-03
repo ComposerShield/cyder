@@ -17,7 +17,7 @@
 #include <memory>
 
 #if JUCE_WINDOWS
-#define WIN32_LEAN_AND_MEAN // speed up compilation
+#define WIN32_LEAN_AND_MEAN // speed up compilation, prevent namespace pollution
 #include <Windows.h> // for GetLastError()
 #endif
 
@@ -57,10 +57,12 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
 
         jassertfalse;
 
-        throw std::runtime_error(("Failed to copy plugin to: "
+        throw std::runtime_error(juce::String("Failed to copy plugin to: "
             + destFile.getFullPathName()
             #if JUCE_WINDOWS
             + " (Win32 error " + juce::String(err) + ")")
+            #else
+            )
             #endif
             .toStdString());
     }
