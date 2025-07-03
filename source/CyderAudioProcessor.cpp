@@ -215,7 +215,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         const bool reloadingSamePlugin = pluginFile == currentPluginFile;
         
         // Copy plugin to temp with a random hash appended
-        auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
+        auto tempPluginFile = Utilities::copyPluginToTemp(pluginFile);
         
         const auto sampleRate = getSampleRate();
         const auto blockSize  = getBlockSize();
