@@ -90,7 +90,7 @@ TEST(UtilitiesCreateInstance, ThrowsWhenInvalidDescription)
 }
 
 #if JUCE_MAC // TODO: fix PC not currently passing
-TEST(UtilitiesCopyPluginToTempWithHash, CopiesFileSuccessfully)
+TEST(UtilitiesCopyPluginToTemp, CopiesFileSuccessfully)
 {
     // Create mock vst3 (which is a directory/bundle)
     auto tempSource = juce::File::createTempFile("testPlugin.vst3");
@@ -106,7 +106,7 @@ TEST(UtilitiesCopyPluginToTempWithHash, CopiesFileSuccessfully)
     juce::File copiedFile;
     EXPECT_NO_THROW(
     {
-        copiedFile = Utilities::copyPluginToTempWithHash(tempSource);
+        copiedFile = Utilities::copyPluginToTemp(tempSource);
     });
 
     ASSERT_TRUE(copiedFile.exists());
@@ -115,13 +115,13 @@ TEST(UtilitiesCopyPluginToTempWithHash, CopiesFileSuccessfully)
 }
 #endif // JUCE_MAC
 
-TEST(UtilitiesCopyPluginToTempWithHash, ThrowsWhenCopyFails)
+TEST(UtilitiesCopyPluginToTemp, ThrowsWhenCopyFails)
 {
     juce::File nonExistentFile("/path/to/nonexistent.dll");
 
     EXPECT_THROW(
     {
-        (void)Utilities::copyPluginToTempWithHash(nonExistentFile);
+        (void)Utilities::copyPluginToTemp(nonExistentFile);
     }
     , std::runtime_error);
 }
