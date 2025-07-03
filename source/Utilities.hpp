@@ -31,7 +31,7 @@ public:
      * @return juce::File pointing to the newly copied plugin.
      * @throws std::runtime_error if the copy operation fails.
      */
-    [[nodiscard]] static juce::File copyPluginToTempWithHash(const juce::File& originalFile) noexcept(false);
+    [[nodiscard]] static juce::File copyPluginToTemp(const juce::File& originalFile) noexcept(false);
 
     /**
      * @brief Scans the specified file for a plugin description.
