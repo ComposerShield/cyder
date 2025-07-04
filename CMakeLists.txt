@@ -5,6 +5,12 @@ project(Cyder VERSION 0.1.0 LANGUAGES C CXX)
 # Option to enable Qiti library support
 option(ENABLE_QITI "Enable Qiti library support" OFF)
 
+# Opt in to new behavior for timestamp extraction in FetchContent
+# This fixes an obnoxious warning in the command line
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 # Use C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,7 +51,7 @@ juce_add_plugin(Cyder_Plugin
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
-    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     DISABLE_AAX_BYPASS FALSE
     DISABLE_AAX_MULTI_MONO FALSE
     MICROPHONE_PERMISSION_ENABLED TRUE
@@ -82,7 +88,6 @@ target_sources(Cyder_Plugin
 )
 
 # Expose the JUCE modules folder for header includes
-message(STATUS "juce_SOURCE_DIR = ${juce_SOURCE_DIR}")
 target_include_directories(Cyder_Plugin
     PRIVATE
         "${juce_SOURCE_DIR}"
@@ -216,7 +221,62 @@ add_dependencies(Cyder_Tests Cyder_Plugin_VST3)
 
 add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
 
+# Example plugin target (VST3 only)
+file(GLOB_RECURSE EXAMPLE_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/example/plugin/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/example/plugin/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/example/plugin/*.h"
+)
+source_group("example plugin source" FILES ${EXAMPLE_SOURCES})
+
+juce_add_plugin(Example_Plugin
+    PRODUCT_NAME "ExamplePlugin"
+    FORMATS VST3
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    VST3_COPY_DIR "${CMAKE_SOURCE_DIR}"
+
+    COMPANY_NAME "Cyder"
+    COMPANY_COPYRIGHT "Copyright (c) 2025"
+    COMPANY_WEBSITE "https://github.com/ComposerShield/cyder"
+
+    IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    DISABLE_AAX_BYPASS FALSE
+    DISABLE_AAX_MULTI_MONO FALSE
+    MICROPHONE_PERMISSION_ENABLED FALSE
+
+    VST3_CATEGORIES Fx
+
+    BUNDLE_ID "com.Cyder.Example"
+    PLUGIN_MANUFACTURER_CODE Exmp
+    PLUGIN_CODE Exmp
+)
+
+set(EXAMPLE_PLUGIN_COMPILE_DEFS
+    JUCE_VST3_CAN_REPLACE_VST2=0
+)
+
+target_compile_definitions(Example_Plugin PRIVATE ${EXAMPLE_PLUGIN_COMPILE_DEFS})
+
+target_sources(Example_Plugin PRIVATE ${EXAMPLE_SOURCES})
+
+target_include_directories(Example_Plugin 
+    PRIVATE
+        "${juce_SOURCE_DIR}"
+)
+
+target_link_libraries(Example_Plugin 
+    PRIVATE
+        juce::juce_audio_processors
+        juce::juce_core
+        juce::juce_graphics
+        juce::juce_gui_basics
+)
+
 # Helper target to specify what all to build from pipeline
 add_custom_target(Cyder_All
-  DEPENDS Cyder_Plugin_VST3 Cyder_Tests
+  DEPENDS Cyder_Plugin_VST3 Example_Plugin_VST3 Cyder_Tests
 )

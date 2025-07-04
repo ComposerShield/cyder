@@ -14,16 +14,26 @@
 
 #include "Utilities.hpp"
 
+#include "CyderAssert.hpp"
+
 #include <memory>
+
+#if JUCE_WINDOWS
+#define WIN32_LEAN_AND_MEAN // speed up compilation, prevent namespace pollution
+#include <Windows.h> // for GetLastError()
+#endif
 
 //==============================================================================
 
-juce::File Utilities::copyPluginToTempWithHash(const juce::File& originalFile) noexcept(false)
+juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(false)
 {
     // Create or reuse a temp subdirectory for copied plugins
     auto tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory)
                        .getChildFile("CyderPlugins");
-    tempDir.createDirectory();
+    {
+        auto result = tempDir.createDirectory();
+        CYDER_ASSERT(result);
+    }
 
     // Generate a random UUID and build new filename
     auto uuid      = juce::Uuid().toString();
@@ -31,9 +41,33 @@ juce::File Utilities::copyPluginToTempWithHash(const juce::File& originalFile) n
     auto ext       = originalFile.getFileExtension(); // includes leading dot
     auto destFile  = tempDir.getChildFile (baseName + "_" + uuid + ext);
 
+    {
+        auto result = destFile.createDirectory();
+        jassert(result);
+    }
+
+    CYDER_ASSERT(originalFile.hasReadAccess());
+    CYDER_ASSERT(destFile.hasWriteAccess());
+
     // Copy and verify
-    if (! originalFile.copyFileTo(destFile))
-        throw std::runtime_error(("Failed to copy plugin to: " + destFile.getFullPathName()).toStdString());
+    if (! originalFile.copyDirectoryTo(destFile))
+    {
+        #if JUCE_WINDOWS
+        auto err = GetLastError();
+        DBG("Copy failed, error " << err);
+        #endif
+
+        CYDER_ASSERT_FALSE;
+
+        throw std::runtime_error(juce::String("Failed to copy plugin to: "
+            + destFile.getFullPathName()
+            #if JUCE_WINDOWS
+            + " (Win32 error " + juce::String(err) + ")")
+            #else
+            )
+            #endif
+            .toStdString());
+    }
 
     return destFile;
 }
@@ -47,7 +81,10 @@ juce::PluginDescription Utilities::findPluginDescription(const juce::File& plugi
     files.add (pluginFile.getFullPathName());
     pluginList.scanAndAddDragAndDroppedFiles(formatManager, files, descriptions);
     if (descriptions.isEmpty())
+    {
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error(("Plugin not found: " + pluginFile.getFullPathName()).toStdString());
+    }
     return *descriptions[0];
 }
 
@@ -55,11 +92,14 @@ std::unique_ptr<juce::AudioPluginInstance> Utilities::createInstance(const juce:
                                                                      juce::AudioPluginFormatManager& formatManager,
                                                                      double sampleRate,
                                                                      int blockSize) noexcept(false)
-{
+{    
     juce::String errorMessage;
     auto instance = formatManager.createPluginInstance(description, sampleRate, blockSize, errorMessage);
-    if (! instance)
+    if (!instance)
+    {
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error(("Error creating plugin instance: " + errorMessage).toStdString());
+    }
     return instance;
 }
 
@@ -68,7 +108,10 @@ std::unique_ptr<juce::DocumentWindow> Utilities::createAndShowEditorWindow(juce:
 {
     auto* editor = instance->createEditor();
     if (editor == nullptr)
+    {
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error("Plugin has no editor");
+    }
     int w = editor->getWidth();
     int h = editor->getHeight();
     if (w <= 0 || h <= 0)

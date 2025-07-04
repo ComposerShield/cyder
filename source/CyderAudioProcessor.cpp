@@ -15,6 +15,7 @@
 #include "CyderAudioProcessor.hpp"
 
 #include "CyderAudioProcessorEditor.hpp"
+#include "CyderAssert.hpp"
 #include "HotReloadThread.hpp"
 #include "Utilities.hpp"
 
@@ -215,7 +216,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         const bool reloadingSamePlugin = pluginFile == currentPluginFile;
         
         // Copy plugin to temp with a random hash appended
-        auto tempPluginFile = Utilities::copyPluginToTempWithHash(pluginFile);
+        auto tempPluginFile = Utilities::copyPluginToTemp(pluginFile);
         
         const auto sampleRate = getSampleRate();
         const auto blockSize  = getBlockSize();
@@ -276,6 +277,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
                 catch(const std::exception& e)
                 {
                     juce::Logger::writeToLog(e.what());
+                    CYDER_ASSERT_FALSE;
                     // Failed to reload plugin...
                 }
             });
@@ -286,6 +288,9 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         juce::Logger::writeToLog(e.what());
         return false;
     }
+    
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+    JUCE_ASSERT_MESSAGE_THREAD
     
     return true;
 }
@@ -301,6 +306,11 @@ void CyderAudioProcessor::unloadPlugin()
         std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
         wrappedPlugin.reset();
     }
+}
+
+juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noexcept
+{
+    return dynamic_cast<juce::AudioProcessor*>(wrappedPlugin.get());
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept

@@ -35,6 +35,7 @@ public:
     bool loadPlugin(const juce::String& pluginPath);
     void unloadPlugin();
     
+    juce::AudioProcessor* getWrappedPluginProcessor() const noexcept;
     juce::AudioProcessorEditor* getWrappedPluginEditor() const noexcept;
     
     //==============================================================================
