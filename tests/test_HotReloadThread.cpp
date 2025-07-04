@@ -9,9 +9,9 @@
 TEST(HotReloadThreadRun, DetectsChangedBinary)
 {
     juce::File currentFile(__FILE__);
-    // Cyder.vst3 must have already been built and copied into root directory
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../Cyder.vst3");
+    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
     
     bool hotReloadThreadDetectedChange = false;
     
@@ -25,7 +25,7 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
     // Pretend to change binary
     juce::File binaryFile = pluginFile.getChildFile("Contents")
                                       .getChildFile("MacOS")
-                                      .getChildFile("Cyder");
+                                      .getChildFile("ExamplePlugin");
     binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
     
     // Give HotReloadThread time to detect change
@@ -41,9 +41,9 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
 TEST(HotReloadThreadRun, DetectsAddedFile)
 {
     juce::File currentFile(__FILE__);
-    // Cyder.vst3 must have already been built and copied into root directory
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../Cyder.vst3");
+    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
     
     bool hotReloadThreadDetectedChange = false;
     

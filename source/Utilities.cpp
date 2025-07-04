@@ -14,6 +14,8 @@
 
 #include "Utilities.hpp"
 
+#include "CyderAssert.hpp"
+
 #include <memory>
 
 #if JUCE_WINDOWS
@@ -30,7 +32,7 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
                        .getChildFile("CyderPlugins");
     {
         auto result = tempDir.createDirectory();
-        jassert(result);
+        CYDER_ASSERT(result);
     }
 
     // Generate a random UUID and build new filename
@@ -44,8 +46,8 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
         jassert(result);
     }
 
-    jassert(originalFile.hasReadAccess());
-    jassert(destFile.hasWriteAccess());
+    CYDER_ASSERT(originalFile.hasReadAccess());
+    CYDER_ASSERT(destFile.hasWriteAccess());
 
     // Copy and verify
     if (! originalFile.copyDirectoryTo(destFile))
@@ -55,7 +57,7 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
         DBG("Copy failed, error " << err);
         #endif
 
-        jassertfalse;
+        CYDER_ASSERT_FALSE;
 
         throw std::runtime_error(juce::String("Failed to copy plugin to: "
             + destFile.getFullPathName()
@@ -80,7 +82,7 @@ juce::PluginDescription Utilities::findPluginDescription(const juce::File& plugi
     pluginList.scanAndAddDragAndDroppedFiles(formatManager, files, descriptions);
     if (descriptions.isEmpty())
     {
-        jassertfalse;
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error(("Plugin not found: " + pluginFile.getFullPathName()).toStdString());
     }
     return *descriptions[0];
@@ -95,7 +97,7 @@ std::unique_ptr<juce::AudioPluginInstance> Utilities::createInstance(const juce:
     auto instance = formatManager.createPluginInstance(description, sampleRate, blockSize, errorMessage);
     if (!instance)
     {
-        jassertfalse;
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error(("Error creating plugin instance: " + errorMessage).toStdString());
     }
     return instance;
@@ -107,7 +109,7 @@ std::unique_ptr<juce::DocumentWindow> Utilities::createAndShowEditorWindow(juce:
     auto* editor = instance->createEditor();
     if (editor == nullptr)
     {
-        jassertfalse;
+        CYDER_ASSERT_FALSE;
         throw std::runtime_error("Plugin has no editor");
     }
     int w = editor->getWidth();

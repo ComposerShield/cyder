@@ -15,6 +15,7 @@
 #include "CyderAudioProcessor.hpp"
 
 #include "CyderAudioProcessorEditor.hpp"
+#include "CyderAssert.hpp"
 #include "HotReloadThread.hpp"
 #include "Utilities.hpp"
 
@@ -276,6 +277,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
                 catch(const std::exception& e)
                 {
                     juce::Logger::writeToLog(e.what());
+                    CYDER_ASSERT_FALSE;
                     // Failed to reload plugin...
                 }
             });
