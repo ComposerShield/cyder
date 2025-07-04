@@ -24,13 +24,19 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --target Cyder_All
         
+      - name: ls
+        run: ls
+        
+      - name: ls ExamplePlugin.vst3
+        run: ls ExamplePlugin.vst3
+        
       - name: Run Unit Tests
         run: |
           cd build
           ctest -C Release --output-on-failure
 
   windows-11-build:
-    if: true
+    if: false
     runs-on: windows-latest
 
     steps:
