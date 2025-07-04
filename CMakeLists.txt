@@ -276,6 +276,14 @@ target_link_libraries(Example_Plugin
         juce::juce_gui_basics
 )
 
+set_target_properties(Example_Plugin PROPERTIES
+    XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+)
+
+set_target_properties(Example_Plugin_VST3 PROPERTIES
+    XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+)
+
 # Helper target to specify what all to build from pipeline
 add_custom_target(Cyder_All
   DEPENDS Cyder_Plugin_VST3 Example_Plugin_VST3 Cyder_Tests
