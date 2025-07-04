@@ -4,6 +4,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_core/juce_core.h>
 
+#include "../source/CyderAssert.hpp"
 #include "../source/Utilities.hpp"
 
 //==============================================================================
@@ -14,8 +15,9 @@ TEST(UtilitiesFindPluginDescription, ReturnsDescriptionForValidPlugin)
     formatManager.addDefaultFormats();
 
     juce::File currentFile(__FILE__);
-    // Cyder.vst3 must have already been built and copied into root directory
-    juce::File pluginFile = currentFile.getSiblingFile("../Cyder.vst3");
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
 
     // Ensure the plugin file exists before testing
     ASSERT_TRUE(pluginFile.exists());
@@ -38,6 +40,9 @@ TEST(UtilitiesFindPluginDescription, ThrowsWhenPluginNotFound)
 
     juce::File nonExistentFile("/path/to/nonexistent.vst3");
 
+    // Turn OFF jasserts for testing bad input
+    ScopedDisableCyderAssert disableJasserts;
+    
     EXPECT_THROW(
     {
         (void)Utilities::findPluginDescription(nonExistentFile, formatManager);
@@ -51,7 +56,7 @@ TEST(UtilitiesCreateInstance, ReturnsInstanceForValidDescription)
     formatManager.addDefaultFormats();
 
     juce::File currentFile(__FILE__);
-    juce::File pluginFile = currentFile.getSiblingFile("../Cyder.vst3");
+    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
 
     ASSERT_TRUE(pluginFile.exists());
 
@@ -82,6 +87,9 @@ TEST(UtilitiesCreateInstance, ThrowsWhenInvalidDescription)
     invalidDesc.name = "NonexistentPlugin";
     invalidDesc.version = "1.0.0";
 
+    // Turn OFF jasserts for testing bad input
+    ScopedDisableCyderAssert disableJasserts;
+    
     EXPECT_THROW(
     {
         (void)Utilities::createInstance(invalidDesc, formatManager, 44100.0, 512);
@@ -117,6 +125,9 @@ TEST(UtilitiesCopyPluginToTemp, ThrowsWhenCopyFails)
 {
     juce::File nonExistentFile("/path/to/nonexistent.dll");
 
+    // Turn OFF jasserts for testing bad input
+    ScopedDisableCyderAssert disableJasserts;
+    
     EXPECT_THROW(
     {
         (void)Utilities::copyPluginToTemp(nonExistentFile);
