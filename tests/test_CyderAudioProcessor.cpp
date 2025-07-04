@@ -84,4 +84,4 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
         ASSERT_TRUE(pluginData == saveState);
     }
 }
-#endif JUCE_MAC
+#endif // JUCE_MAC
