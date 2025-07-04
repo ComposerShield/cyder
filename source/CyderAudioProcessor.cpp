@@ -289,6 +289,9 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         return false;
     }
     
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+    JUCE_ASSERT_MESSAGE_THREAD
+    
     return true;
 }
 
@@ -303,6 +306,11 @@ void CyderAudioProcessor::unloadPlugin()
         std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
         wrappedPlugin.reset();
     }
+}
+
+juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noexcept
+{
+    return dynamic_cast<juce::AudioProcessor*>(wrappedPlugin.get());
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept

@@ -8,7 +8,6 @@
 
 int main(int argc, char** argv)
 {
-    
     juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
     
     ::testing::InitGoogleTest(&argc, argv);

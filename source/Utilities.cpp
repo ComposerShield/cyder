@@ -92,7 +92,7 @@ std::unique_ptr<juce::AudioPluginInstance> Utilities::createInstance(const juce:
                                                                      juce::AudioPluginFormatManager& formatManager,
                                                                      double sampleRate,
                                                                      int blockSize) noexcept(false)
-{
+{    
     juce::String errorMessage;
     auto instance = formatManager.createPluginInstance(description, sampleRate, blockSize, errorMessage);
     if (!instance)
