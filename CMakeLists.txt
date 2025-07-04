@@ -240,5 +240,5 @@ target_link_libraries(Example_Plugin
 
 # Helper target to specify what all to build from pipeline
 add_custom_target(Cyder_All
-  DEPENDS Cyder_Plugin_VST3 Example_Plugin Cyder_Tests
+  DEPENDS Cyder_Plugin_VST3 Example_Plugin_VST3 Cyder_Tests
 )
