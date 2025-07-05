@@ -25,19 +25,19 @@ static constexpr int headerBarHeight = 22;
 
 CyderAudioProcessorEditor::CyderAudioProcessorEditor(CyderAudioProcessor& p)
 : juce::AudioProcessorEditor(p)
-, processor (p)
+, processor(p)
 {
     headerBar = std::make_unique<CyderHeaderBar>(processor);
     addAndMakeVisible(headerBar.get());
     
     setSize(400, 300);
     
-    loadWrappedEditorFromProcessor();
+    loadWrappedEditor(processor.getWrappedPluginEditor());
 }
 
 CyderAudioProcessorEditor::~CyderAudioProcessorEditor()
 {
-    unloadWrappedEditor();
+    unloadWrappedEditor(processor.getWrappedPluginEditor());
 }
 
 void CyderAudioProcessorEditor::paint(juce::Graphics& g)
@@ -65,7 +65,7 @@ bool CyderAudioProcessorEditor::isInterestedInFileDrag(const juce::StringArray& 
 
 void CyderAudioProcessorEditor::filesDropped(const juce::StringArray& files, int /*x*/, int /*y*/)
 {
-    unloadWrappedEditor();
+    unloadWrappedEditor(processor.getWrappedPluginEditor());
     
     fileDraggingOverEditor = false;
     
@@ -73,7 +73,7 @@ void CyderAudioProcessorEditor::filesDropped(const juce::StringArray& files, int
     [[maybe_unused]] auto result = processor.loadPlugin(pluginString);
     jassert(result);
     
-    loadWrappedEditorFromProcessor();
+    loadWrappedEditor(processor.getWrappedPluginEditor());
 }
 
 void CyderAudioProcessorEditor::fileDragEnter(const juce::StringArray& /*files*/, int /*x*/, int /*y*/)
@@ -88,9 +88,8 @@ void CyderAudioProcessorEditor::fileDragExit(const juce::StringArray& /*files*/)
     repaint();
 }
 
-void CyderAudioProcessorEditor::unloadWrappedEditor(bool shouldCacheSize)
+void CyderAudioProcessorEditor::unloadWrappedEditor(juce::AudioProcessorEditor* editor, bool shouldCacheSize)
 {
-    auto* editor = processor.getWrappedPluginEditor();
     if (editor != nullptr)
     {
         if (shouldCacheSize)
@@ -105,9 +104,8 @@ void CyderAudioProcessorEditor::unloadWrappedEditor(bool shouldCacheSize)
     }
 }
 
-void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
+void CyderAudioProcessorEditor::loadWrappedEditor(juce::AudioProcessorEditor* editor)
 {
-    auto* editor = processor.getWrappedPluginEditor();
     if (editor != nullptr)
     {
         addAndMakeVisible(editor);
@@ -115,7 +113,7 @@ void CyderAudioProcessorEditor::loadWrappedEditorFromProcessor()
         if (cachedWidth.has_value() && cachedHeight.has_value())
         {
             const auto width  = std::exchange(cachedWidth,  std::nullopt).value();
-            const auto height = std::exchange(cachedHeight,  std::nullopt).value() + headerBarHeight;
+            const auto height = std::exchange(cachedHeight,  std::nullopt).value();
             editor->setSize(width, height);
         }
         else
@@ -141,4 +139,9 @@ void CyderAudioProcessorEditor::componentMovedOrResized(juce::Component& /*compo
                 editor->getHeight() + headerBarHeight);
         headerBar->setBounds(0, 0, getWidth(), headerBarHeight);
     }
+}
+
+bool CyderAudioProcessorEditor::isFileDraggingOverEditor() const noexcept
+{
+    return fileDraggingOverEditor;
 }
