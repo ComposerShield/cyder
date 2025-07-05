@@ -250,7 +250,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
             hotReloadThread->stopThread(1000); // don't hot reload while we're loading
         
         if (cyderEditor != nullptr)
-            cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ reloadingSamePlugin);
+            cyderEditor->unloadWrappedEditor(getWrappedPluginEditor(),
+                                             /*shouldCacheSize*/ reloadingSamePlugin);
         
         wrappedPluginEditor.reset();
         
@@ -262,7 +263,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         wrappedPluginEditor.reset(std::move(editor));
         
         if (cyderEditor != nullptr)
-            cyderEditor->loadWrappedEditorFromProcessor();
+            cyderEditor->loadWrappedEditor(getWrappedPluginEditor());
         
         hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
         
@@ -298,7 +299,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 void CyderAudioProcessor::unloadPlugin()
 {
     if (auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor()))
-        cyderEditor->unloadWrappedEditor(/*shouldCacheSize*/ false);
+        cyderEditor->unloadWrappedEditor(getWrappedPluginEditor(),
+                                         /*shouldCacheSize*/ false);
     
     wrappedPluginEditor.reset();
     
