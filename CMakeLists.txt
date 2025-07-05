@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 project(Cyder VERSION 0.1.0 LANGUAGES C CXX)
 
+# Option to enable Qiti library support
+option(ENABLE_QITI "Enable Qiti library support" OFF)
+
 # Opt in to new behavior for timestamp extraction in FetchContent
 # This fixes an obnoxious warning in the command line
 if(POLICY CMP0135)
@@ -12,7 +15,7 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include JUCE via FetchContent
+# Add JUCE dependency
 include(FetchContent)
 FetchContent_Declare(
     juce
@@ -20,6 +23,17 @@ FetchContent_Declare(
     GIT_TAG        8.0.8
 )
 FetchContent_MakeAvailable(juce)
+
+# Add Qiti dependency
+if(ENABLE_QITI)
+    include(FetchContent)
+    FetchContent_Declare(
+        qiti
+        GIT_REPOSITORY https://github.com/ComposerShield/qiti
+        GIT_TAG        5f2ae68
+    )
+    FetchContent_MakeAvailable(qiti)
+endif()
 
 # Create a plugin target
 juce_add_plugin(Cyder_Plugin
@@ -92,6 +106,9 @@ target_link_libraries(Cyder_Plugin
      # public so it can be used by unit test executable
     PUBLIC
         ${CYDER_JUCE_LIBS}
+
+        # if Qiti is linked
+        $<$<BOOL:${ENABLE_QITI}>:qiti_lib>
 )
 
 set(CYDER_COMPILE_DEFS
@@ -122,10 +139,10 @@ set(CYDER_COMPILE_DEFS
     JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
 )
 
-target_compile_definitions(Cyder_Plugin 
-    # public so it can be used by unit test executable
+target_compile_definitions(Cyder_Plugin
     PUBLIC
         ${CYDER_COMPILE_DEFS}
+        $<$<BOOL:${ENABLE_QITI}>:ENABLE_QITI>
 )
 
 # Disable macOS App Sandbox and Hardened Runtime for the standalone
@@ -133,6 +150,16 @@ if (APPLE)
     set_target_properties(Cyder_Plugin PROPERTIES
         XCODE_ATTRIBUTE_ENABLE_APP_SANDBOX "NO"
         XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "NO"
+
+        XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+    )
+
+    set_target_properties(Cyder_Plugin_VST3 PROPERTIES
+        XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+    )
+
+    set_target_properties(Cyder_Plugin_Standalone PROPERTIES
+        XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
     )
 endif()
 
@@ -171,14 +198,22 @@ add_executable(Cyder_Tests ${TEST_SOURCES})
 
 target_link_libraries(Cyder_Tests
     PRIVATE
-        GTest::gmock_main # also brings in gtest
         Cyder_Plugin
+        GTest::gmock_main # also brings in gtest
+
+        # if Qiti is linked
+        $<$<BOOL:${ENABLE_QITI}>:qiti_lib>
+        $<$<BOOL:${ENABLE_QITI}>:qiti_tests_client>
 )
 
 target_include_directories(Cyder_Tests 
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/source"
         "${juce_SOURCE_DIR}"
+)
+
+set_target_properties(Cyder_Tests PROPERTIES
+    XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
 )
 
 add_test(NAME Cyder_Tests COMMAND Cyder_Tests)
@@ -237,6 +272,17 @@ target_link_libraries(Example_Plugin
         juce::juce_graphics
         juce::juce_gui_basics
 )
+
+set_target_properties(Example_Plugin PROPERTIES
+    XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+)
+
+set_target_properties(Example_Plugin_VST3 PROPERTIES
+    XCODE_GENERATE_SCHEME ON # Let us build the target in Xcode as a scheme
+)
+
+# Some tests require that the VST3 is already built
+add_dependencies(Cyder_Tests Example_Plugin)
 
 # Helper target to specify what all to build from pipeline
 add_custom_target(Cyder_All
