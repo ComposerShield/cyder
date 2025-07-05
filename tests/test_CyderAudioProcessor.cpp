@@ -1,6 +1,12 @@
 
 #include <gtest/gtest.h>
 
+#if ENABLE_QITI
+#include <qiti_include.hpp>
+
+#include "../example/plugin/source/ExamplePluginProcessor.h"
+#endif
+
 #include <juce_core/juce_core.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -22,9 +28,17 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
 
     {
         auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
-        jassert(result);
         ASSERT_TRUE(result);
     }
+    
+#if ENABLE_QITI
+    qiti::ScopedQitiTest qitiTest; // TODO: figure out a way to move this up
+    
+    auto examplePluginGetStateInformation =
+        qiti::FunctionData::getFunctionData<&ExamplePluginAudioProcessor::setStateInformation>();
+    auto examplePluginSetStateInformation =
+        qiti::FunctionData::getFunctionData<&ExamplePluginAudioProcessor::getStateInformation>();
+#endif
     
     auto* exampleProcessor = cyderProcessor.getWrappedPluginProcessor();
 
@@ -40,8 +54,6 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
         
         // Set the state directly into the plugin processor
         // without having it wrapped by the VST3PluginInstance
-        JUCE_ASSERT_MESSAGE_THREAD
-        
         exampleProcessor->setStateInformation(rawSaveState.getData(),
                                               static_cast<int>(rawSaveState.getSize()));
     }
@@ -52,8 +64,17 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
     
     // Retreive session data from Cyder
     {
+    #if ENABLE_QITI
+        ASSERT_EQ(examplePluginGetStateInformation->getNumTimesCalled(), 0);
+    #endif
+        
         juce::MemoryBlock retreivedState;
         cyderProcessor.getStateInformation(retreivedState);
+        
+    #if ENABLE_QITI
+        // Cyder getStateInformation() calls wrapped plugin's getStateInformation()
+        ASSERT_EQ(examplePluginGetStateInformation->getNumTimesCalled(), 1);
+    #endif
         
         void* data = retreivedState.getData();
         auto sizeInBytes = static_cast<int>(retreivedState.getSize());
@@ -82,6 +103,16 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
             juce::Base64::convertFromBase64(stream, base64Data);
         }
         ASSERT_TRUE(pluginData == saveState);
+        
+    #if ENABLE_QITI
+        ASSERT_EQ(examplePluginGetStateInformation->getNumTimesCalled(), 0);
+        
+        cyderProcessor.setStateInformation(retreivedState.getData(),
+                                           static_cast<int>(retreivedState.getSize()));
+        
+        // Cyder setStateInformation() calls wrapped plugin's setStateInformation()
+        ASSERT_EQ(examplePluginGetStateInformation->getNumTimesCalled(), 1);
+    #endif
     }
 }
 #endif // JUCE_MAC
