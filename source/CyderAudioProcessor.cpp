@@ -322,6 +322,9 @@ juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const 
 
 void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
     juce::MemoryBlock memoryBlock;
     wrappedPlugin->getStateInformation(memoryBlock);
     destinationProcessor.setStateInformation(memoryBlock.getData(),
