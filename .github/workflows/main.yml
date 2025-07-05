@@ -46,12 +46,12 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --config Debug --target Cyder_Tests
+          cmake --build build --config Release --target Cyder_All
         
       - name: Run Unit Tests
         run: |
           cd build
-          ctest -C Debug --verbose
+          ctest -C Release --verbose
           
   mac-15-build-clang-ninja-qiti:
     if: true
@@ -77,11 +77,13 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --config Debug --target Cyder_Tests
+          # Must be debug on Qiti builds
+          cmake --build build --config Debug --target Cyder_All
         
       - name: Run Unit Tests
         run: |
           cd build
+          # Must be debug on Qiti builds
           ctest -C Debug --verbose
 
   windows-11-build:
