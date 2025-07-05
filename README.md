@@ -4,7 +4,7 @@ An FX audio plugin wrapper that enables "hot-reloading" of the wrapped plugin.
 
 ## Prerequisites
 - Mac or PC (PC still a work-in-progress)
-- CMake (>= 3.10)
+- CMake v3.15 or later
 - Git
 - A C++ compiler (Clang, Apple Clang, or MSVC supported)
 
