@@ -27,9 +27,9 @@ jobs:
       - name: Run Unit Tests
         run: |
           cd build
-          ctest -C Release --output-on-failure
+          ctest -C Release --verbose
           
-  mac-14-build-xcode-qiti:
+  mac-14-build-xcode:
     if: true
     runs-on: macos-14
     steps:
@@ -41,10 +41,8 @@ jobs:
         with:
           xcode-version: '15.4'
 
-      # Build with Qiti instrumentation, including enabling TSan.
-      # Enables additional tests not possible in regular Release builds.
       - name: Configure CMake (Xcode generator)
-        run: cmake . -B build -DENABLE_QITI=ON
+        run: cmake . -B build
 
       - name: Build
         run: |
@@ -53,7 +51,38 @@ jobs:
       - name: Run Unit Tests
         run: |
           cd build
-          ctest -C Debug --output-on-failure
+          ctest -C Debug --verbose
+          
+  mac-15-build-clang-ninja-qiti:
+    if: true
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install LLVM 16 & Ninja
+        run: |
+          brew install llvm@16 ninja
+          echo "PATH=$(brew --prefix llvm@16)/bin:$PATH" >> $GITHUB_ENV
+
+      # Build with Qiti instrumentation, including enabling TSan.
+      # Enables additional tests not possible in regular Release builds.
+      - name: Configure CMake (Xcode generator)
+        run: cmake . -B build \
+             -G Ninja \
+             -DCMAKE_BUILD_TYPE=Debug \
+             -DCMAKE_C_COMPILER=clang \
+             -DCMAKE_CXX_COMPILER=clang++ \
+             -DENABLE_QITI=ON
+
+      - name: Build
+        run: |
+          cmake --build build --config Debug --target Cyder_Tests
+        
+      - name: Run Unit Tests
+        run: |
+          cd build
+          ctest -C Debug --verbose
 
   windows-11-build:
     if: false
@@ -72,7 +101,7 @@ jobs:
       - name: Run Unit Tests
         run: |
           cd build
-          ctest -C Release --output-on-failure
+          ctest -C Release --verbose
 
   lint:
     runs-on: ubuntu-latest
