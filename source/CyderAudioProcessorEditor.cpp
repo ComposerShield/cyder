@@ -113,7 +113,7 @@ void CyderAudioProcessorEditor::loadWrappedEditor(juce::AudioProcessorEditor* ed
         if (cachedWidth.has_value() && cachedHeight.has_value())
         {
             const auto width  = std::exchange(cachedWidth,  std::nullopt).value();
-            const auto height = std::exchange(cachedHeight,  std::nullopt).value() + headerBarHeight;
+            const auto height = std::exchange(cachedHeight,  std::nullopt).value();
             editor->setSize(width, height);
         }
         else
