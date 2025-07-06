@@ -9,7 +9,6 @@
 
 //==============================================================================
 
-#if JUCE_MAC // TODO: fix PC not currently passing
 TEST(HotReloadThreadRun, DetectsChangedBinary)
 {
 #if ENABLE_QITI
@@ -21,7 +20,10 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         juce::File currentFile(__FILE__);
         // ExamplePlugin.vst3 must have already been built and copied into root directory
         // so we can use it as a testable VST3
-        juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+        juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                           .getParentDirectory() // root dir
+                                           .getChildFile("ExamplePlugin")
+                                           .withFileExtension("vst3");
         
         bool hotReloadThreadDetectedChange = false;
         
@@ -58,12 +60,16 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
 #endif
 }
 
+#if JUCE_MAC // TODO: fix PC not currently passing
 TEST(HotReloadThreadRun, DetectsAddedFile)
 {
     juce::File currentFile(__FILE__);
     // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                       .getParentDirectory() // root dir
+                                       .getChildFile("ExamplePlugin")
+                                       .withFileExtension("vst3");
     
     bool hotReloadThreadDetectedChange = false;
     
