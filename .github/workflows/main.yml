@@ -60,9 +60,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Install LLVM 16 & Ninja
+      - name: Install LLVM 16
         run: |
-          brew install llvm@16 ninja
+          brew install llvm@16
           echo "PATH=$(brew --prefix llvm@16)/bin:$PATH" >> $GITHUB_ENV
 
       # Build with Qiti instrumentation, including enabling TSan.
