@@ -40,13 +40,11 @@ public:
 class MockEditor : public juce::AudioProcessorEditor
 {
 public:
-    MockEditor(int width, int height) : AudioProcessorEditor(mockProcessor)
+    MockEditor(juce::AudioProcessor& processor, int width, int height) 
+    : AudioProcessorEditor(processor)
     {
         setSize(width, height);
     }
-    
-private:
-    MockProcessor mockProcessor;
 };
 } // namespace
 
@@ -102,11 +100,15 @@ TEST(CyderAudioProcessorEditorLoadWrappedEditor, CacheEditorSizeWhenReloadingPlu
     ASSERT_TRUE(editor != nullptr);
     
     // Original editor for plugin
-    auto wrappedEditor0 = std::make_unique<MockEditor>(/*width*/1080,
+    MockProcessor mockProcessor0;
+    auto wrappedEditor0 = std::make_unique<MockEditor>(mockProcessor0,
+                                                       /*width*/1080,
                                                        /*height*/720);
     
+    MockProcessor mockProcessor1;
     // Mocked new editor for plugin after changes were made to the binary
-    auto wrappedEditor1 = std::make_unique<MockEditor>(/*width*/1111,
+    auto wrappedEditor1 = std::make_unique<MockEditor>(mockProcessor1,
+                                                       /*width*/1111,
                                                        /*height*/222);
     
     // Load first editor
@@ -122,6 +124,12 @@ TEST(CyderAudioProcessorEditorLoadWrappedEditor, CacheEditorSizeWhenReloadingPlu
     ASSERT_EQ(wrappedEditor1->getWidth(), wrappedEditor0->getWidth());
     ASSERT_EQ(wrappedEditor1->getHeight(), wrappedEditor0->getHeight());
     
-    // Cleanup
+    // Cleanup, creates issues on PC if none performed in the correct order
     editor->unloadWrappedEditor(wrappedEditor1.get());
+    mockProcessor1.editorBeingDeleted(wrappedEditor1.get());
+    wrappedEditor1.reset();
+    mockProcessor0.editorBeingDeleted(wrappedEditor0.get());
+    wrappedEditor0.reset();
+    cyderProcessor.editorBeingDeleted(editor.get());
+    editor.reset();
 }
