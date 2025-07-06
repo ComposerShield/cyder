@@ -184,7 +184,7 @@ void CyderAudioProcessor::setStateInformation (const void* data, int sizeInBytes
         loadPlugin(savedPathString);
     }
     
-    if (wrappedPlugin == nullptr) // something went wrong
+    if (wrappedPlugin == nullptr) // something went wrong when loading wrapped plugin from saved state
         return;
 
     // Decode and restore wrapped plugin state
@@ -211,7 +211,6 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     
     try
     {
-        juce::ScopedJuceInitialiser_GUI libraryInitialiser;
         juce::File pluginFile(pluginPath);
         const bool reloadingSamePlugin = pluginFile == currentPluginFile;
         

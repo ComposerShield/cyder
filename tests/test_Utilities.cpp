@@ -17,7 +17,10 @@ TEST(UtilitiesFindPluginDescription, ReturnsDescriptionForValidPlugin)
     juce::File currentFile(__FILE__);
     // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                       .getParentDirectory() // root dir
+                                       .getChildFile("ExamplePlugin")
+                                       .withFileExtension("vst3");
 
     // Ensure the plugin file exists before testing
     ASSERT_TRUE(pluginFile.exists());
@@ -38,7 +41,11 @@ TEST(UtilitiesFindPluginDescription, ThrowsWhenPluginNotFound)
     juce::AudioPluginFormatManager formatManager;
     formatManager.addDefaultFormats();
 
-    juce::File nonExistentFile("/path/to/nonexistent.vst3");
+    juce::File currentFile(__FILE__);
+    juce::File nonExistentFile = currentFile.getParentDirectory() // "tests"
+                                            .getParentDirectory() // root dir
+                                            .getChildFile("NonExistentPlugin")
+                                            .withFileExtension("vst3");
 
     // Turn OFF jasserts for testing bad input
     ScopedDisableCyderAssert disableJasserts;
@@ -56,7 +63,12 @@ TEST(UtilitiesCreateInstance, ReturnsInstanceForValidDescription)
     formatManager.addDefaultFormats();
 
     juce::File currentFile(__FILE__);
-    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                       .getParentDirectory() // root dir
+                                       .getChildFile("ExamplePlugin")
+                                       .withFileExtension("vst3");
 
     ASSERT_TRUE(pluginFile.exists());
 
@@ -104,7 +116,9 @@ TEST(UtilitiesCopyPluginToTemp, CopiesFileSuccessfully)
     tempSource.createDirectory();
     
     // Create mock binary to stick inside the bundle, give us something within bundle to copy
-    auto mockBinaryFile = tempSource.getChildFile("Contents").getChildFile("MacOS").getChildFile("testPlugin");
+    auto mockBinaryFile = tempSource.getChildFile("Contents")
+                                    .getChildFile("MacOS")
+                                    .getChildFile("testPlugin");
     [[maybe_unused]] auto result = mockBinaryFile.create();
     jassert(result);
     
@@ -123,7 +137,11 @@ TEST(UtilitiesCopyPluginToTemp, CopiesFileSuccessfully)
 
 TEST(UtilitiesCopyPluginToTemp, ThrowsWhenCopyFails)
 {
-    juce::File nonExistentFile("/path/to/nonexistent.dll");
+    juce::File currentFile(__FILE__);
+    juce::File nonExistentFile = currentFile.getParentDirectory() // "tests"
+                                            .getParentDirectory() // root dir
+                                            .getChildFile("NonExistentPlugin")
+                                            .withFileExtension("vst3");
 
     // Turn OFF jasserts for testing bad input
     ScopedDisableCyderAssert disableJasserts;

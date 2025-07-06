@@ -16,7 +16,6 @@
 
 //==============================================================================
 
-#if JUCE_MAC // TODO: fix on PC
 TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
 {    
     CyderAudioProcessor cyderProcessor;
@@ -115,4 +114,3 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
     #endif
     }
 }
-#endif // JUCE_MAC
