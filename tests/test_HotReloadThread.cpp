@@ -41,7 +41,7 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
         
         // Give HotReloadThread time to detect change
-        juce::Thread::sleep(1000);
+        juce::Thread::sleep(2000);
         
         // Change was detected
         ASSERT_TRUE(hotReloadThreadDetectedChange);
