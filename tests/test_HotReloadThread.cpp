@@ -7,6 +7,8 @@
 
 #include "../source/HotReloadThread.hpp"
 
+#include <atomic>
+
 //==============================================================================
 
 TEST(HotReloadThreadRun, DetectsChangedBinary)
@@ -25,7 +27,7 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
                                            .getChildFile("ExamplePlugin")
                                            .withFileExtension("vst3");
         
-        bool hotReloadThreadDetectedChange = false;
+        std::atomic<bool> hotReloadThreadDetectedChange = false;
         
         // Create thread (automatically starts running)
         HotReloadThread thread(pluginFile);
@@ -36,9 +38,17 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         
         // Pretend to change binary
         juce::File binaryFile = pluginFile.getChildFile("Contents")
-            .getChildFile("MacOS")
-            .getChildFile("ExamplePlugin");
-        binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
+                                          #if JUCE_MAC
+                                          .getChildFile("MacOS")
+                                          .getChildFile("ExamplePlugin");
+                                          #else // JUCE_WINDOWS
+                                          .getChildFile("x86_64-win")
+                                          .getChildFile("ExamplePlugin")
+                                          .withFileExtension(".vst3");
+                                          #endif
+        jassert(binaryFile.existsAsFile());
+        bool modificationTimeChanged = binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
+        jassert(modificationTimeChanged);
         
         // Give HotReloadThread time to detect change
         juce::Thread::sleep(3000);
