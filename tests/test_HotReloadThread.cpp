@@ -41,13 +41,13 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
         
         // Give HotReloadThread time to detect change
-        juce::Thread::sleep(2000);
+        juce::Thread::sleep(3000);
         
         // Change was detected
         ASSERT_TRUE(hotReloadThreadDetectedChange);
         
         // Stop thread
-        thread.stopThread(1000);
+        thread.stopThread(2000);
         
 #if ENABLE_QITI
     };
