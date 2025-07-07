@@ -62,7 +62,10 @@ TEST(CyderAudioProcessorEditorIsInterestedInFileDrag, AcceptsVST3)
     juce::File currentFile(__FILE__);
     // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                       .getParentDirectory() // root dir
+                                       .getChildFile("ExamplePlugin")
+                                       .withFileExtension("vst3");
     
     juce::StringArray files;
     files.add(pluginFile.getFullPathName());
@@ -83,10 +86,13 @@ TEST(CyderAudioProcessorEditorIsInterestedInFileDrag, RejectsNonVST3)
     juce::File currentFile(__FILE__);
     // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../mockFile.txt");
+    juce::File mockFile = currentFile.getParentDirectory() // "tests"
+                                      .getParentDirectory() // root dir
+                                      .getChildFile("MockFile")
+                                      .withFileExtension("txt");
     
     juce::StringArray files;
-    files.add(pluginFile.getFullPathName());
+    files.add(mockFile.getFullPathName());
     
     // Is interested in a VST3
     ASSERT_FALSE(dragAndDropTarget->isInterestedInFileDrag(files));
