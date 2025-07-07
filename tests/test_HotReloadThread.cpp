@@ -46,9 +46,9 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
                                           .getChildFile("ExamplePlugin")
                                           .withFileExtension(".vst3");
                                           #endif
-        jassert(binaryFile.existsAsFile());
+        ASSERT_TRUE(binaryFile.existsAsFile());
         bool modificationTimeChanged = binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
-        jassert(modificationTimeChanged);
+        ASSERT_TRUE(modificationTimeChanged);
         
         // Give HotReloadThread time to detect change
         juce::Thread::sleep(3000);
@@ -70,7 +70,6 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
 #endif
 }
 
-#if JUCE_MAC // TODO: fix PC not currently passing
 TEST(HotReloadThreadRun, DetectsAddedFile)
 {
     juce::File currentFile(__FILE__);
@@ -81,7 +80,7 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
                                        .getChildFile("ExamplePlugin")
                                        .withFileExtension("vst3");
     
-    bool hotReloadThreadDetectedChange = false;
+    std::atomic<bool> hotReloadThreadDetectedChange = false;
     
     // Create thread (automatically starts running)
     HotReloadThread thread(pluginFile);
@@ -94,10 +93,8 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     juce::File resourceFile = pluginFile.getChildFile("Contents")
                                         .getChildFile("Resources")
                                         .getChildFile("data.txt");
-    
-    auto result = resourceFile.create();
-    ASSERT_TRUE(result.ok());
-    resourceFile.setLastModificationTime(juce::Time::getCurrentTime());
+    auto fileWasCreated = resourceFile.create();
+    ASSERT_TRUE(fileWasCreated.ok());
     
     // Give HotReloadThread time to detect change (should still be
     juce::Thread::sleep(1000);
@@ -106,9 +103,10 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     ASSERT_TRUE(hotReloadThreadDetectedChange);
     
     // Stop thread
-    thread.stopThread(1000);
+    [[maybe_unused]] bool threadStoppedSafely = thread.stopThread(2000);
+    jassert(threadStoppedSafely);
     
     // Cleanup
-    resourceFile.deleteFile();
+    [[maybe_unused]] bool fileDeleted = resourceFile.deleteFile();
+    jassert(fileDeleted);
 }
-#endif // JUCE_MAC
