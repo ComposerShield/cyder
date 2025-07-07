@@ -69,6 +69,35 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
             .toStdString());
     }
 
+    #if JUCE_WINDOWS
+    // Copy the matching PDF file (if it exists) into the same folder as the copied dll ---
+    // else the original will be used (since it is hard coded in the binary) --- 
+    auto originalPdb = originalFile.withFileExtension(".pdb");
+    if (originalPdb.existsAsFile())
+    {
+        juce::File destDir = destFile
+                .getChildFile("Contents")
+                .getChildFile("x86_64-win");
+
+        if (destDir.exists())
+        {
+            // place the PDB next to the DLL
+            auto destPdb = destDir.getChildFile(originalPdb.getFileNameWithoutExtension())
+                                  .withFileExtension(".pdb");
+            if (! originalPdb.copyFileTo(destPdb))
+            {
+                DBG("Failed to copy PDB to temp: " << originalPdb.getFullPathName());
+                CYDER_ASSERT_FALSE;
+            }
+        }
+        else
+        {
+            DBG("Destination directory not found, skipping PDB copy");
+            CYDER_ASSERT_FALSE;
+        }
+    }
+    #endif
+
     return destFile;
 }
 
