@@ -70,8 +70,6 @@ private:
     juce::File currentPluginFile;
     juce::AudioPluginFormatManager formatManager;
     
-    std::mutex wrappedPluginMutex;
-    
     std::unique_ptr<juce::AudioPluginInstance>  wrappedPlugin;
     std::unique_ptr<juce::AudioProcessorEditor> wrappedPluginEditor;
     

@@ -78,7 +78,6 @@ bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& /*layouts*/
 
 void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
     if (wrappedPlugin == nullptr)
         return;
     
@@ -255,7 +254,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         wrappedPluginEditor.reset();
         
         {
-            std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
+            juce::ScopedLock lock(getCallbackLock()); // lock audio thread
             wrappedPlugin.reset(instance.release());
             setLatencySamples(wrappedPlugin->getLatencySamples());
         }
@@ -289,9 +288,6 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         return false;
     }
     
-    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
-    JUCE_ASSERT_MESSAGE_THREAD
-    
     return true;
 }
 
@@ -304,7 +300,7 @@ void CyderAudioProcessor::unloadPlugin()
     wrappedPluginEditor.reset();
     
     {
-        std::scoped_lock<std::mutex> lock(wrappedPluginMutex);
+        juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset();
     }
 }
