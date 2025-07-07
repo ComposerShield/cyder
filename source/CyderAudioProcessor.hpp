@@ -67,7 +67,9 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
 private:
-    juce::File currentPluginFile;
+    juce::File currentPluginFileOriginal;
+    juce::File currentPluginFileCopy;
+    
     juce::AudioPluginFormatManager formatManager;
     
     std::unique_ptr<juce::AudioPluginInstance>  wrappedPlugin;
