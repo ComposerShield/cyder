@@ -7,9 +7,10 @@
 
 #include "../source/HotReloadThread.hpp"
 
+#include <atomic>
+
 //==============================================================================
 
-#if JUCE_MAC // TODO: fix PC not currently passing
 TEST(HotReloadThreadRun, DetectsChangedBinary)
 {
 #if ENABLE_QITI
@@ -21,9 +22,12 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         juce::File currentFile(__FILE__);
         // ExamplePlugin.vst3 must have already been built and copied into root directory
         // so we can use it as a testable VST3
-        juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+        juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                           .getParentDirectory() // root dir
+                                           .getChildFile("ExamplePlugin")
+                                           .withFileExtension("vst3");
         
-        bool hotReloadThreadDetectedChange = false;
+        std::atomic<bool> hotReloadThreadDetectedChange = false;
         
         // Create thread (automatically starts running)
         HotReloadThread thread(pluginFile);
@@ -34,18 +38,26 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         
         // Pretend to change binary
         juce::File binaryFile = pluginFile.getChildFile("Contents")
-            .getChildFile("MacOS")
-            .getChildFile("ExamplePlugin");
-        binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
+                                          #if JUCE_MAC
+                                          .getChildFile("MacOS")
+                                          .getChildFile("ExamplePlugin");
+                                          #else // JUCE_WINDOWS
+                                          .getChildFile("x86_64-win")
+                                          .getChildFile("ExamplePlugin")
+                                          .withFileExtension(".vst3");
+                                          #endif
+        ASSERT_TRUE(binaryFile.existsAsFile());
+        bool modificationTimeChanged = binaryFile.setLastModificationTime(juce::Time::getCurrentTime());
+        ASSERT_TRUE(modificationTimeChanged);
         
         // Give HotReloadThread time to detect change
-        juce::Thread::sleep(2000);
+        juce::Thread::sleep(3000);
         
         // Change was detected
         ASSERT_TRUE(hotReloadThreadDetectedChange);
         
         // Stop thread
-        thread.stopThread(1000);
+        thread.stopThread(2000);
         
 #if ENABLE_QITI
     };
@@ -63,9 +75,12 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     juce::File currentFile(__FILE__);
     // ExamplePlugin.vst3 must have already been built and copied into root directory
     // so we can use it as a testable VST3
-    juce::File pluginFile = currentFile.getSiblingFile("../ExamplePlugin.vst3");
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+                                       .getParentDirectory() // root dir
+                                       .getChildFile("ExamplePlugin")
+                                       .withFileExtension("vst3");
     
-    bool hotReloadThreadDetectedChange = false;
+    std::atomic<bool> hotReloadThreadDetectedChange = false;
     
     // Create thread (automatically starts running)
     HotReloadThread thread(pluginFile);
@@ -78,10 +93,8 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     juce::File resourceFile = pluginFile.getChildFile("Contents")
                                         .getChildFile("Resources")
                                         .getChildFile("data.txt");
-    
-    auto result = resourceFile.create();
-    ASSERT_TRUE(result.ok());
-    resourceFile.setLastModificationTime(juce::Time::getCurrentTime());
+    auto fileWasCreated = resourceFile.create();
+    ASSERT_TRUE(fileWasCreated.ok());
     
     // Give HotReloadThread time to detect change (should still be
     juce::Thread::sleep(1000);
@@ -90,9 +103,10 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     ASSERT_TRUE(hotReloadThreadDetectedChange);
     
     // Stop thread
-    thread.stopThread(1000);
+    [[maybe_unused]] bool threadStoppedSafely = thread.stopThread(2000);
+    jassert(threadStoppedSafely);
     
     // Cleanup
-    resourceFile.deleteFile();
+    [[maybe_unused]] bool fileDeleted = resourceFile.deleteFile();
+    jassert(fileDeleted);
 }
-#endif // JUCE_MAC
