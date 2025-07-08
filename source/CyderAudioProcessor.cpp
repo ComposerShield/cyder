@@ -42,7 +42,7 @@ CyderAudioProcessor::CyderAudioProcessor()
 CyderAudioProcessor::~CyderAudioProcessor()
 {
     if (hotReloadThread != nullptr)
-        hotReloadThread->stopThread(1000);
+        hotReloadThread->stopThread(1500);
     unloadPlugin();
 }
 
@@ -150,7 +150,7 @@ void CyderAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // Build XML root element
     auto xml = std::make_unique<juce::XmlElement>(JucePlugin_Name);
     xml->setAttribute("version", JucePlugin_VersionString);
-    xml->setAttribute("pluginFilePath", currentPluginFile.getFullPathName());
+    xml->setAttribute("pluginFilePath", currentPluginFileOriginal.getFullPathName());
 
     // Serialize wrapped plugin state
     juce::MemoryBlock pluginData;
@@ -211,7 +211,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     try
     {
         juce::File pluginFile(pluginPath);
-        const bool reloadingSamePlugin = pluginFile == currentPluginFile;
+        const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
         
         // Copy plugin to temp with a random hash appended
         auto tempPluginFile = Utilities::copyPluginToTemp(pluginFile);
@@ -240,12 +240,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
         // Make sure nothing above threw exception before swapping out current members
         
-        currentPluginFile = pluginFile;
+        currentPluginFileOriginal = pluginFile;
         if (reloadingSamePlugin)
             transferPluginState(*instance);
         
         if (hotReloadThread != nullptr)
-            hotReloadThread->stopThread(1000); // don't hot reload while we're loading
+            hotReloadThread->stopThread(1500); // don't hot reload while we're loading
         
         if (cyderEditor != nullptr)
             cyderEditor->unloadWrappedEditor(getWrappedPluginEditor(),
@@ -258,6 +258,14 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
             wrappedPlugin.reset(instance.release());
             setLatencySamples(wrappedPlugin->getLatencySamples());
         }
+        
+        if (currentPluginFileCopy.exists())
+        {
+            [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
+            CYDER_ASSERT(didCleanUp);
+        }
+        currentPluginFileCopy = tempPluginFile;
+        
         wrappedPluginEditor.reset(std::move(editor));
         
         if (cyderEditor != nullptr)
@@ -303,6 +311,13 @@ void CyderAudioProcessor::unloadPlugin()
         juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset();
     }
+    
+    if (currentPluginFileCopy.exists())
+    {
+        [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
+        currentPluginFileCopy = juce::File(); // reset
+        CYDER_ASSERT(didCleanUp);
+    }
 }
 
 juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noexcept
@@ -313,6 +328,16 @@ juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noe
 juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const noexcept
 {
     return wrappedPluginEditor.get();
+}
+
+juce::File CyderAudioProcessor::getCurrentWrappedPluginPathCopy() const noexcept
+{
+    return currentPluginFileCopy;
+}
+
+juce::File CyderAudioProcessor::getCurrentWrappedPluginPathOriginal() const noexcept
+{
+    return currentPluginFileOriginal;
 }
 
 void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept

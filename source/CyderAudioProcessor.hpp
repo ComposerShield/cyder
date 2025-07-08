@@ -38,6 +38,9 @@ public:
     juce::AudioProcessor* getWrappedPluginProcessor() const noexcept;
     juce::AudioProcessorEditor* getWrappedPluginEditor() const noexcept;
     
+    juce::File getCurrentWrappedPluginPathCopy() const noexcept;
+    juce::File getCurrentWrappedPluginPathOriginal() const noexcept;
+    
     //==============================================================================
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -67,7 +70,9 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
 private:
-    juce::File currentPluginFile;
+    juce::File currentPluginFileOriginal;
+    juce::File currentPluginFileCopy;
+    
     juce::AudioPluginFormatManager formatManager;
     
     std::unique_ptr<juce::AudioPluginInstance>  wrappedPlugin;

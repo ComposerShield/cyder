@@ -117,3 +117,64 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
     #endif
     }
 }
+
+#if JUCE_MAC // TODO: figure out a way to make cleanup work on PC
+TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
+{
+    CyderAudioProcessor cyderProcessor;
+    
+    juce::File currentFile(__FILE__);
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+        .getParentDirectory() // root dir
+        .getChildFile("ExamplePlugin")
+        .withFileExtension("vst3");
+    
+    // Load example plugin
+    {
+        auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+        ASSERT_TRUE(result);
+    }
+    
+    // Ensure our copied plugin path exists
+    auto copiedPath = cyderProcessor.getCurrentWrappedPluginPathCopy();
+    ASSERT_TRUE(copiedPath.exists());
+    
+    // Unload Plugin
+    cyderProcessor.unloadPlugin();
+    
+    // Ensure our copied plugin path was deleted
+    ASSERT_FALSE(copiedPath.exists());
+}
+
+TEST(CyderAudioProcessorDestructor, DeleteCopiedPluginWhenCyderIsDestroyed)
+{
+    juce::File copiedPath;
+    
+    {
+        CyderAudioProcessor cyderProcessor;
+        
+        juce::File currentFile(__FILE__);
+        // ExamplePlugin.vst3 must have already been built and copied into root directory
+        // so we can use it as a testable VST3
+        juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+            .getParentDirectory() // root dir
+            .getChildFile("ExamplePlugin")
+            .withFileExtension("vst3");
+        
+        // Load example plugin
+        {
+            auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+            ASSERT_TRUE(result);
+        }
+        
+        // Ensure our copied plugin path exists
+        copiedPath = cyderProcessor.getCurrentWrappedPluginPathCopy();
+        ASSERT_TRUE(copiedPath.exists());
+    } // Processor deleted
+    
+    // Ensure our copied plugin path was deleted
+    ASSERT_FALSE(copiedPath.exists());
+}
+#endif // JUCE_MAC
