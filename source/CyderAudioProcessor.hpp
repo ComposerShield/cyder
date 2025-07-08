@@ -20,6 +20,17 @@
 
 //==============================================================================
 
+enum class CyderStatus
+{
+    idle,
+    loading,
+    reloading,
+    successfullyLoadedPlugin,
+    successfullyReloadedPlugin,
+    failedToLoadPlugin,
+    failedToReloadPlugin,
+};
+
 class HotReloadThread;
 
 //==============================================================================
@@ -36,6 +47,9 @@ public:
     bool loadPlugin(const juce::String& pluginPath);
     /** */
     void unloadPlugin();
+    
+    /** */
+    CyderStatus getCurrentStatus() const noexcept;
     
     /** */
     juce::AudioProcessor* getWrappedPluginProcessor() const noexcept;
@@ -81,6 +95,8 @@ public:
     //==============================================================================
     
 private:
+    CyderStatus currentStatus = CyderStatus::idle;
+    
     juce::File currentPluginFileOriginal;
     juce::File currentPluginFileCopy;
     

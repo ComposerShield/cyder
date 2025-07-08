@@ -20,6 +20,8 @@
 
 //==============================================================================
 
+static constexpr int margin = 5;
+
 class CyderHeaderBarLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
@@ -32,6 +34,20 @@ public:
     }
 };
 
+const char* getStatusAsString(CyderStatus status) noexcept
+{
+    switch(status)
+    {
+        case CyderStatus::idle                       : return "";
+        case CyderStatus::loading                    : return "";
+        case CyderStatus::reloading                  : return "";
+        case CyderStatus::successfullyLoadedPlugin   : return "Successfully loaded plugin";
+        case CyderStatus::successfullyReloadedPlugin : return "Successfully reloaded plugin";
+        case CyderStatus::failedToLoadPlugin         : return "Failed to load plugin...";
+        case CyderStatus::failedToReloadPlugin       : return "Failed to reload plugin...";
+    };
+}
+
 //==============================================================================
 
 CyderHeaderBar::CyderHeaderBar(CyderAudioProcessor& _processor)
@@ -43,22 +59,30 @@ CyderHeaderBar::CyderHeaderBar(CyderAudioProcessor& _processor)
     unloadPluginButton.setButtonText("Unload Plugin");
     addAndMakeVisible(unloadPluginButton);
     unloadPluginButton.addListener(this);
+    
+    startTimer(/*ms*/500);
 }
 
 CyderHeaderBar::~CyderHeaderBar()
 {
+    stopTimer();
     setLookAndFeel(nullptr);
 }
 
 void CyderHeaderBar::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::grey);
+    
+    g.setColour(juce::Colours::white);
+    g.drawText(currentStatusString,
+               getLocalBounds().withTrimmedRight(margin),
+               juce::Justification(juce::Justification::centredRight));
 }
 
 void CyderHeaderBar::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.removeFromLeft(5);
+    bounds.removeFromLeft(margin);
     unloadPluginButton.setBounds(bounds.removeFromLeft(100));
 }
 
@@ -67,5 +91,26 @@ void CyderHeaderBar::buttonClicked(juce::Button* button)
     if (button == &unloadPluginButton)
     {
         processor.unloadPlugin();
+    }
+}
+
+void CyderHeaderBar::timerCallback()
+{
+    if (currentStatusString.isNotEmpty()
+        && timeSinceStatusReportedMs > lengthOfTimeToDisplayStatusMs)
+    {
+        currentStatusString = "";
+        repaint();
+    }
+    else
+        timeSinceStatusReportedMs += getTimerInterval();
+    
+    auto status = processor.getCurrentStatus();
+    if (currentStatus != status)
+    {
+        currentStatus = status;
+        currentStatusString = getStatusAsString(currentStatus);
+        timeSinceStatusReportedMs = 0;
+        repaint();
     }
 }

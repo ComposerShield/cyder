@@ -134,6 +134,7 @@ TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
     {
         auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
         ASSERT_TRUE(result);
+        EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::successfullyLoadedPlugin);
     }
     
     // Ensure HotReloadThread exists and is running
@@ -146,6 +147,9 @@ TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
     
     // Unload Plugin
     cyderProcessor.unloadPlugin();
+    EXPECT_TRUE(cyderProcessor.getWrappedPluginProcessor() == nullptr);
+    EXPECT_TRUE(cyderProcessor.getWrappedPluginEditor() == nullptr);
+    EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::idle);
     
     // Ensure HotReloadThread no longer exists (we wouldn't want to reload after unloading!)
     {
@@ -171,6 +175,7 @@ TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
     {
         auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
         ASSERT_TRUE(result);
+        EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::successfullyLoadedPlugin);
     }
     
     // Ensure our copied plugin path exists
@@ -179,6 +184,9 @@ TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
     
     // Unload Plugin
     cyderProcessor.unloadPlugin();
+    EXPECT_TRUE(cyderProcessor.getWrappedPluginProcessor() == nullptr);
+    EXPECT_TRUE(cyderProcessor.getWrappedPluginEditor() == nullptr);
+    EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::idle);
     
     // Ensure our copied plugin path was deleted
     ASSERT_FALSE(copiedPath.exists());

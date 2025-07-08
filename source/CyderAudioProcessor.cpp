@@ -238,8 +238,13 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     catch(const std::exception& e) // failed to load plugin
     {
         juce::Logger::writeToLog(e.what());
+        currentStatus = reloadingSamePlugin ? CyderStatus::failedToReloadPlugin
+                                            : CyderStatus::failedToLoadPlugin;
+        CYDER_ASSERT_FALSE;
+        
         if (hotReloadThread != nullptr)
             hotReloadThread->startThread(); // restart HotReloadThread
+        
         return false;
     }
     
@@ -296,19 +301,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     {
         juce::MessageManager::callAsync([&]
         {
-            try
-            {
-                loadPlugin(hotReloadThread->getFullPluginPath());
-            }
-            catch(const std::exception& e)
-            {
-                juce::Logger::writeToLog(e.what());
-                CYDER_ASSERT_FALSE;
-                // Failed to reload plugin...
-            }
+            loadPlugin(hotReloadThread->getFullPluginPath());
         });
     };
     
+    currentStatus = reloadingSamePlugin ? CyderStatus::successfullyReloadedPlugin
+                                        : CyderStatus::successfullyLoadedPlugin;
     return true;
 }
 
@@ -332,6 +330,7 @@ void CyderAudioProcessor::unloadPlugin()
         juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset();
     }
+    currentPluginFileOriginal = juce::File(); // reset
     
     // Cleanup: Delete copied plugin
     if (currentPluginFileCopy.exists())
@@ -340,6 +339,14 @@ void CyderAudioProcessor::unloadPlugin()
         currentPluginFileCopy = juce::File(); // reset
         CYDER_ASSERT(didCleanUp);
     }
+    
+    // Update status
+    currentStatus = CyderStatus::idle;
+}
+
+CyderStatus CyderAudioProcessor::getCurrentStatus() const noexcept
+{
+    return currentStatus;
 }
 
 juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noexcept
