@@ -118,6 +118,42 @@ TEST(CyderAudioProcessorGetAndSetStateInformation, SaveAndRestoreData)
     }
 }
 
+TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
+{
+    CyderAudioProcessor cyderProcessor;
+    
+    juce::File currentFile(__FILE__);
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+        .getParentDirectory() // root dir
+        .getChildFile("ExamplePlugin")
+        .withFileExtension("vst3");
+    
+    // Load example plugin
+    {
+        auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+        ASSERT_TRUE(result);
+    }
+    
+    // Ensure HotReloadThread exists and is running
+    {
+        auto* hotReloadThread = cyderProcessor.getHotReloadThread();
+        EXPECT_TRUE(hotReloadThread != nullptr);
+        if (hotReloadThread != nullptr)
+            EXPECT_TRUE(hotReloadThread->isThreadRunning());
+    }
+    
+    // Unload Plugin
+    cyderProcessor.unloadPlugin();
+    
+    // Ensure HotReloadThread no longer exists (we wouldn't want to reload after unloading!)
+    {
+        auto* hotReloadThread = cyderProcessor.getHotReloadThread();
+        EXPECT_EQ(hotReloadThread, nullptr);
+    }
+}
+
 #if JUCE_MAC // TODO: figure out a way to make cleanup work on PC
 TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
 {

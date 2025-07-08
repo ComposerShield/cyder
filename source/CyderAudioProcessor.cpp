@@ -301,17 +301,26 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
 void CyderAudioProcessor::unloadPlugin()
 {
+    // Stop and reset hot reload thread first so we don't reload after unloading
+    if (hotReloadThread != nullptr)
+    {
+        hotReloadThread->stopThread(1500);
+        hotReloadThread.reset();
+    }
+    
+    // Unload wrapped editor
     if (auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor()))
         cyderEditor->unloadWrappedEditor(getWrappedPluginEditor(),
                                          /*shouldCacheSize*/ false);
-    
     wrappedPluginEditor.reset();
     
+    // Unload wrapped processor
     {
         juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset();
     }
     
+    // Cleanup: Delete copied plugin path
     if (currentPluginFileCopy.exists())
     {
         [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
@@ -338,6 +347,11 @@ juce::File CyderAudioProcessor::getCurrentWrappedPluginPathCopy() const noexcept
 juce::File CyderAudioProcessor::getCurrentWrappedPluginPathOriginal() const noexcept
 {
     return currentPluginFileOriginal;
+}
+
+juce::Thread* CyderAudioProcessor::getHotReloadThread() const noexcept
+{
+    return hotReloadThread.get();
 }
 
 void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept
