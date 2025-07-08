@@ -74,8 +74,7 @@ void CyderHeaderBar::paint(juce::Graphics& g)
     g.fillAll(juce::Colours::grey);
     
     g.setColour(juce::Colours::white);
-    auto statusString = juce::String(getStatusAsString(currentStatus));
-    g.drawText(statusString,
+    g.drawText(currentStatusString,
                getLocalBounds().withTrimmedRight(margin),
                juce::Justification(juce::Justification::centredRight));
 }
@@ -97,10 +96,21 @@ void CyderHeaderBar::buttonClicked(juce::Button* button)
 
 void CyderHeaderBar::timerCallback()
 {
+    if (currentStatusString.isNotEmpty()
+        && timeSinceStatusReportedMs > lengthOfTimeToDisplayStatusMs)
+    {
+        currentStatusString = "";
+        repaint();
+    }
+    else
+        timeSinceStatusReportedMs += getTimerInterval();
+    
     auto status = processor.getCurrentStatus();
     if (currentStatus != status)
     {
         currentStatus = status;
+        currentStatusString = getStatusAsString(currentStatus);
+        timeSinceStatusReportedMs = 0;
         repaint();
     }
 }

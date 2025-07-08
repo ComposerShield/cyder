@@ -39,6 +39,10 @@ public:
 private:
     CyderAudioProcessor& processor;
     CyderStatus currentStatus;
+    juce::String currentStatusString;
+    
+    static constexpr int lengthOfTimeToDisplayStatusMs = 2000;
+    int timeSinceStatusReportedMs = 0;
     
     juce::TextButton unloadPluginButton;
     std::unique_ptr<juce::LookAndFeel> lookAndFeel;
