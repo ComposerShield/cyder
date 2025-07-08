@@ -50,11 +50,16 @@ void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     if (wrappedPlugin == nullptr)
         return;
     
-    if (getTotalNumInputChannels() != wrappedPlugin->getTotalNumInputChannels()
-        || getTotalNumOutputChannels() != wrappedPlugin->getTotalNumOutputChannels())
+    // Wrapped plugin can only be mono or stereo
+    // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
+    bool isStereo = getTotalNumOutputChannels();
+    bool wrappedPluginIsStereo = getTotalNumOutputChannels();
+    auto numChannels = isStereo ? 2 : 1;
+    
+    if (isStereo != wrappedPluginIsStereo)
     {
-        wrappedPlugin->setPlayConfigDetails(getTotalNumInputChannels(),
-                                            getTotalNumOutputChannels(),
+        wrappedPlugin->setPlayConfigDetails(numChannels, // input
+                                            numChannels, // output
                                             sampleRate,
                                             samplesPerBlock);
     }
@@ -214,8 +219,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     juce::File pluginFile(pluginPath);
     const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
     
-    const auto sampleRate = getSampleRate();
-    const auto blockSize  = getBlockSize();
+    // Wrapped plugin can only be mono or stereo
+    // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
+    const bool isStereo    = getTotalNumOutputChannels();
+    const auto numChannels = isStereo ? 2 : 1;
+    const auto sampleRate  = getSampleRate();
+    const auto blockSize   = getBlockSize();
     
     if (hotReloadThread != nullptr)
         hotReloadThread->stopThread(1500); // don't hot reload while we're loading
@@ -230,8 +239,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         juce::AudioProcessor::setTypeOfNextNewPlugin(wrapperType_VST3);
 
         auto description = Utilities::findPluginDescription(incomingCopiedPlugin, formatManager);
-        description.numInputChannels  = getTotalNumInputChannels();
-        description.numOutputChannels = getTotalNumOutputChannels();
+        description.numInputChannels  = numChannels;
+        description.numOutputChannels = numChannels;
         
         newInstance = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
     }
@@ -251,8 +260,8 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     // Make sure nothing above threw exception before swapping out current plugin with new plugin
     
     // Configure incoming plugin
-    newInstance->setPlayConfigDetails(getTotalNumInputChannels(),
-                                      getTotalNumOutputChannels(),
+    newInstance->setPlayConfigDetails(numChannels,
+                                      numChannels,
                                       sampleRate,
                                       blockSize);
     newInstance->prepareToPlay(sampleRate, blockSize);
