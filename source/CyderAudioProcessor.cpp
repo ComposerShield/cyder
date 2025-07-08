@@ -330,6 +330,16 @@ juce::AudioProcessorEditor* CyderAudioProcessor::getWrappedPluginEditor() const 
     return wrappedPluginEditor.get();
 }
 
+juce::File CyderAudioProcessor::getCurrentWrappedPluginPathCopy() const noexcept
+{
+    return currentPluginFileCopy;
+}
+
+juce::File CyderAudioProcessor::getCurrentWrappedPluginPathOriginal() const noexcept
+{
+    return currentPluginFileOriginal;
+}
+
 void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept
 {
     if (wrappedPlugin == nullptr)
