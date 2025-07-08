@@ -36,7 +36,6 @@ CyderAudioProcessor::CyderAudioProcessor()
      )
 #endif
 {
-    formatManager.addDefaultFormats();
 }
 
 CyderAudioProcessor::~CyderAudioProcessor()
@@ -206,10 +205,11 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     // CFBundle does not like it if we attempt to load a dll outside the message thread
     jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
     
-    DBG("pluginPath: " << pluginPath);
-    
     try
     {
+        juce::AudioPluginFormatManager formatManager;
+        formatManager.addDefaultFormats();
+        
         juce::File pluginFile(pluginPath);
         const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
         
