@@ -22,13 +22,15 @@
 //==============================================================================
 
 class CyderAudioProcessor;
+enum class CyderStatus;
 
 //==============================================================================
 
 /** */
 class CyderHeaderBar final
-: public juce::Component
+: public  juce::Component
 , private juce::Button::Listener
+, private juce::Timer
 {
 public:
     CyderHeaderBar(CyderAudioProcessor& processor);
@@ -36,6 +38,7 @@ public:
     
 private:
     CyderAudioProcessor& processor;
+    CyderStatus currentStatus;
     
     juce::TextButton unloadPluginButton;
     std::unique_ptr<juce::LookAndFeel> lookAndFeel;
@@ -44,6 +47,8 @@ private:
     void resized() override;
     
     void buttonClicked(juce::Button*) override;
+    
+    void timerCallback() override;
     
     CyderHeaderBar(const CyderHeaderBar&) = delete;
     CyderHeaderBar& operator=(const CyderHeaderBar&) = delete;
