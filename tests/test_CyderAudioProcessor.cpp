@@ -154,7 +154,6 @@ TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
     }
 }
 
-#if JUCE_MAC // TODO: figure out a way to make cleanup work on PC
 TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
 {
     CyderAudioProcessor cyderProcessor;
@@ -213,4 +212,3 @@ TEST(CyderAudioProcessorDestructor, DeleteCopiedPluginWhenCyderIsDestroyed)
     // Ensure our copied plugin path was deleted
     ASSERT_FALSE(copiedPath.exists());
 }
-#endif // JUCE_MAC
