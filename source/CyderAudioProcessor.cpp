@@ -205,96 +205,109 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     // CFBundle does not like it if we attempt to load a dll outside the message thread
     jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
     
+    std::unique_ptr<juce::AudioPluginInstance> newInstance;
+    juce::File incomingCopiedPlugin;
+    
+    juce::AudioPluginFormatManager formatManager;
+    formatManager.addDefaultFormats();
+    
+    juce::File pluginFile(pluginPath);
+    const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
+    
+    const auto sampleRate = getSampleRate();
+    const auto blockSize  = getBlockSize();
+    
+    if (hotReloadThread != nullptr)
+        hotReloadThread->stopThread(1500); // don't hot reload while we're loading
+    
+    // Load incoming plugin (without yet removing ours)
     try
     {
-        juce::AudioPluginFormatManager formatManager;
-        formatManager.addDefaultFormats();
-        
-        juce::File pluginFile(pluginPath);
-        const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
-        
         // Copy plugin to temp with a random hash appended
-        auto tempPluginFile = Utilities::copyPluginToTemp(pluginFile);
-        
-        const auto sampleRate = getSampleRate();
-        const auto blockSize  = getBlockSize();
+        incomingCopiedPlugin = Utilities::copyPluginToTemp(pluginFile);
 
         // Only supporting VST3
         juce::AudioProcessor::setTypeOfNextNewPlugin(wrapperType_VST3);
 
-        auto description  = Utilities::findPluginDescription(tempPluginFile, formatManager);
-        
+        auto description = Utilities::findPluginDescription(incomingCopiedPlugin, formatManager);
         description.numInputChannels  = getTotalNumInputChannels();
         description.numOutputChannels = getTotalNumOutputChannels();
         
-        auto instance     = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
-        auto editor       = instance->createEditor();
-        auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
-        
-        instance->setPlayConfigDetails(getTotalNumInputChannels(),
-                                       getTotalNumOutputChannels(),
-                                       sampleRate,
-                                       blockSize);
-        
-        instance->prepareToPlay(sampleRate, blockSize);
-
-        // Make sure nothing above threw exception before swapping out current members
-        
-        currentPluginFileOriginal = pluginFile;
-        if (reloadingSamePlugin)
-            transferPluginState(*instance);
-        
+        newInstance = Utilities::createInstance(description, formatManager, sampleRate, blockSize);
+    }
+    catch(const std::exception& e) // failed to load plugin
+    {
+        juce::Logger::writeToLog(e.what());
         if (hotReloadThread != nullptr)
-            hotReloadThread->stopThread(1500); // don't hot reload while we're loading
-        
+            hotReloadThread->startThread(); // restart HotReloadThread
+        return false;
+    }
+    
+    // Make sure nothing above threw exception before swapping out current plugin with new plugin
+    
+    // Configure incoming plugin
+    newInstance->setPlayConfigDetails(getTotalNumInputChannels(),
+                                      getTotalNumOutputChannels(),
+                                      sampleRate,
+                                      blockSize);
+    newInstance->prepareToPlay(sampleRate, blockSize);
+    if (reloadingSamePlugin)
+        transferPluginState(*newInstance);
+    
+    // Unload editor
+    {
+        auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
         if (cyderEditor != nullptr)
             cyderEditor->unloadWrappedEditor(getWrappedPluginEditor(),
                                              /*shouldCacheSize*/ reloadingSamePlugin);
-        
         wrappedPluginEditor.reset();
+    }
+    
+    // Swap out processor
+    {
+        juce::ScopedLock lock(getCallbackLock()); // lock audio thread
+        wrappedPlugin.reset(newInstance.release());
+        setLatencySamples(wrappedPlugin->getLatencySamples());
+    }
+    
+    // Cleanup: Delete copied plugin
+    if (currentPluginFileCopy.exists())
+    {
+        [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
+        CYDER_ASSERT(didCleanUp);
+    }
+    currentPluginFileOriginal = pluginFile;
+    currentPluginFileCopy = incomingCopiedPlugin;
+    
+    // Create new editor
+    {
+        auto editor = wrappedPlugin->createEditor();
+        CYDER_ASSERT(editor != nullptr);
+        wrappedPluginEditor.reset(editor);
         
-        {
-            juce::ScopedLock lock(getCallbackLock()); // lock audio thread
-            wrappedPlugin.reset(instance.release());
-            setLatencySamples(wrappedPlugin->getLatencySamples());
-        }
-        
-        if (currentPluginFileCopy.exists())
-        {
-            [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
-            CYDER_ASSERT(didCleanUp);
-        }
-        currentPluginFileCopy = tempPluginFile;
-        
-        wrappedPluginEditor.reset(std::move(editor));
-        
+        auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor());
         if (cyderEditor != nullptr)
             cyderEditor->loadWrappedEditor(getWrappedPluginEditor());
-        
-        hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
-        
-        hotReloadThread->onPluginChangeDetected = [&]
-        {
-            juce::MessageManager::callAsync([&]
-            {
-                try
-                {
-                    loadPlugin(hotReloadThread->getFullPluginPath());
-                }
-                catch(const std::exception& e)
-                {
-                    juce::Logger::writeToLog(e.what());
-                    CYDER_ASSERT_FALSE;
-                    // Failed to reload plugin...
-                }
-            });
-        };
     }
-    catch(const std::exception& e)
+    
+    // Restart HotReloadThread
+    hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
+    hotReloadThread->onPluginChangeDetected = [&]
     {
-        juce::Logger::writeToLog(e.what());
-        return false;
-    }
+        juce::MessageManager::callAsync([&]
+        {
+            try
+            {
+                loadPlugin(hotReloadThread->getFullPluginPath());
+            }
+            catch(const std::exception& e)
+            {
+                juce::Logger::writeToLog(e.what());
+                CYDER_ASSERT_FALSE;
+                // Failed to reload plugin...
+            }
+        });
+    };
     
     return true;
 }
@@ -320,7 +333,7 @@ void CyderAudioProcessor::unloadPlugin()
         wrappedPlugin.reset();
     }
     
-    // Cleanup: Delete copied plugin path
+    // Cleanup: Delete copied plugin
     if (currentPluginFileCopy.exists())
     {
         [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();

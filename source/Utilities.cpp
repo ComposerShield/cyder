@@ -125,7 +125,7 @@ std::unique_ptr<juce::AudioPluginInstance> Utilities::createInstance(const juce:
 {    
     juce::String errorMessage;
     auto instance = formatManager.createPluginInstance(description, sampleRate, blockSize, errorMessage);
-    if (!instance)
+    if (instance == nullptr)
     {
         CYDER_ASSERT_FALSE;
         throw std::runtime_error(("Error creating plugin instance: " + errorMessage).toStdString());
