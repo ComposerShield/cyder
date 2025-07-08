@@ -46,6 +46,7 @@ juce::File Utilities::copyPluginToTemp(const juce::File& originalFile) noexcept(
         jassert(result);
     }
 
+    CYDER_ASSERT(originalFile.exists());
     CYDER_ASSERT(originalFile.hasReadAccess());
     CYDER_ASSERT(destFile.hasWriteAccess());
 
