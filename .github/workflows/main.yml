@@ -29,6 +29,15 @@ jobs:
           cd build
           ctest -C Release --verbose
           
+      - name: Install pluginval
+        run: |
+          brew update
+          brew install pluginval
+
+      - name: Validate VST3 with pluginval
+        run: |
+          pluginval --strictness-level 10 --validate ./Cyder.vst3
+          
   mac-14-build-xcode:
     if: true
     runs-on: macos-14
