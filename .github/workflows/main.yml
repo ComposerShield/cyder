@@ -33,6 +33,10 @@ jobs:
         run: |
           brew update
           brew install pluginval
+          
+      - name: Add Homebrew’s binaries to PATH
+        run: |
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
 
       - name: Validate VST3 with pluginval
         run: |
