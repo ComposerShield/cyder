@@ -301,7 +301,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
 void CyderAudioProcessor::unloadPlugin()
 {
-    // Stop and reset hot reload thread first
+    // Stop and reset hot reload thread first so we don't reload after unloading
     if (hotReloadThread != nullptr)
     {
         hotReloadThread->stopThread(1500);
@@ -347,6 +347,11 @@ juce::File CyderAudioProcessor::getCurrentWrappedPluginPathCopy() const noexcept
 juce::File CyderAudioProcessor::getCurrentWrappedPluginPathOriginal() const noexcept
 {
     return currentPluginFileOriginal;
+}
+
+juce::Thread* CyderAudioProcessor::getHotReloadThread() const noexcept
+{
+    return hotReloadThread.get();
 }
 
 void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept

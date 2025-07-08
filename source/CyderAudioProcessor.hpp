@@ -32,13 +32,22 @@ public:
     
     //==============================================================================
     
+    /** */
     bool loadPlugin(const juce::String& pluginPath);
+    /** */
     void unloadPlugin();
     
+    /** */
     juce::AudioProcessor* getWrappedPluginProcessor() const noexcept;
+    /** */
     juce::AudioProcessorEditor* getWrappedPluginEditor() const noexcept;
     
+    /** */
+    juce::Thread* getHotReloadThread() const noexcept;
+    
+    /** */
     juce::File getCurrentWrappedPluginPathCopy() const noexcept;
+    /** */
     juce::File getCurrentWrappedPluginPathOriginal() const noexcept;
     
     //==============================================================================
@@ -68,6 +77,8 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    //==============================================================================
     
 private:
     juce::File currentPluginFileOriginal;
