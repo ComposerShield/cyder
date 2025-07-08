@@ -85,6 +85,8 @@ void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     if (wrappedPlugin == nullptr)
         return;
     
+    auto playhead = getPlayHead();
+    wrappedPlugin->setPlayHead(playhead);
     wrappedPlugin->processBlock(buffer, midiMessages);
 }
 
