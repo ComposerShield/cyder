@@ -84,8 +84,6 @@ private:
     juce::File currentPluginFileOriginal;
     juce::File currentPluginFileCopy;
     
-    juce::AudioPluginFormatManager formatManager;
-    
     std::unique_ptr<juce::AudioPluginInstance>  wrappedPlugin;
     std::unique_ptr<juce::AudioProcessorEditor> wrappedPluginEditor;
     
