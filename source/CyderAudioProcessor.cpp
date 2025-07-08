@@ -339,6 +339,9 @@ void CyderAudioProcessor::unloadPlugin()
         currentPluginFileCopy = juce::File(); // reset
         CYDER_ASSERT(didCleanUp);
     }
+    
+    // Update status
+    currentStatus = CyderStatus::idle;
 }
 
 CyderStatus CyderAudioProcessor::getCurrentStatus() const noexcept
