@@ -105,7 +105,12 @@ private:
     
     std::unique_ptr<HotReloadThread> hotReloadThread;
     
+    mutable juce::ThreadPool cleanupThreadPool {/*numThreads*/1};
+    
+    /** */
     void transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept;
+    /** */
+    void deleteStalePlugin(juce::File pluginToDelete) const noexcept;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CyderAudioProcessor)
 };

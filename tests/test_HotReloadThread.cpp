@@ -51,7 +51,7 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         ASSERT_TRUE(modificationTimeChanged);
         
         // Give HotReloadThread time to detect change
-        const int maxNumSeconds = 10;
+        constexpr int maxNumSeconds = 10;
         for (int second = 0; second < maxNumSeconds; ++second)
         {
             if (hotReloadThreadDetectedChange)

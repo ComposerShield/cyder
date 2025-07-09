@@ -188,7 +188,15 @@ TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
     EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::idle);
     
     #if JUCE_WINDOWS
-    juce::Thread::sleep(2000); // PC requires a pause before deleting the unloaded copied plugin
+    // PC requires a pause before deleting the unloaded copied plugin
+    // This takes an unknown length of time so we poll every second
+    constexpr int maxNumSeconds = 10;
+    for (int second = 0; second < maxNumSeconds; ++second)
+    {
+        if (! copiedPath.exists())
+            break; // stop polling as soon as we can see that the plugin was deleted
+        juce::Thread::sleep(1000); // wait 1 second before next check
+    }
     #endif
     
     // Ensure our copied plugin path was deleted
@@ -220,10 +228,6 @@ TEST(CyderAudioProcessorDestructor, DeleteCopiedPluginWhenCyderIsDestroyed)
         copiedPath = cyderProcessor.getCurrentWrappedPluginPathCopy();
         ASSERT_TRUE(copiedPath.exists());
     } // Processor deleted, should unload before finished destructing
-    
-    #if JUCE_WINDOWS
-    juce::Thread::sleep(2000); // PC requires a pause before deleting the unloaded copied plugin
-    #endif
     
     // Ensure our copied plugin path was deleted
     ASSERT_FALSE(copiedPath.exists());

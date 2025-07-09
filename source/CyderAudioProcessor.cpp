@@ -29,40 +29,6 @@
 #endif
 
 //==============================================================================
-
-/**
-  FYI - Must pass by value instead of const ref to ensure thread does not have dangling ref...
-*/
-void deleteStalePlugin(juce::File pluginToDelete) noexcept
-{
-    // Cleanup: Delete copied plugin
-    if (pluginToDelete.exists())
-    {
-        #if JUCE_WINDOWS
-        // Windows requires a pause before deleting the copied plugin so we 
-        // can do that in another thread to not hold up main thread
-        std::thread cleanupWorkerThread([=]
-        {
-            juce::Thread::sleep(1000);
-        #endif
-
-            bool didCleanUp = pluginToDelete.deleteRecursively();
-            if (didCleanUp)
-                DBG("Successfully deleted unloaded plugin copy");
-            else
-            {
-                DBG("Failed to delete unloaded plugin copy");
-                CYDER_ASSERT_FALSE;
-            }
-
-        #if JUCE_WINDOWS
-        });
-        cleanupWorkerThread.detach(); // Don't wait for it to finish
-        #endif
-    }
-}
-
-//==============================================================================
 CyderAudioProcessor::CyderAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
     : juce::AudioProcessor (juce::AudioProcessor::BusesProperties()
@@ -428,6 +394,53 @@ void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationP
     wrappedPlugin->getStateInformation(memoryBlock);
     destinationProcessor.setStateInformation(memoryBlock.getData(),
                                              static_cast<int>(memoryBlock.getSize()));
+}
+
+/**
+  Delete copied plugin after we unload it and do not need it anymore
+  FYI - Must pass parameter by value instead of const ref to ensure thread does not have dangling ref...
+*/
+void CyderAudioProcessor::deleteStalePlugin(juce::File pluginToDelete) const noexcept
+{
+    if (pluginToDelete.exists())
+    {
+        #if JUCE_WINDOWS
+        // Windows requires a pause before deleting the copied plugin so we
+        // can do that in another thread to not hold up main thread
+        cleanupThreadPool.addJob([=]
+        {
+            constexpr int maxNumSeconds = 10;
+            bool didCleanUp = false;
+            for (int second = 0; second<maxNumSeconds; ++second)
+            {
+                juce::Thread::sleep(1000); // wait 1 seconds
+                
+                didCleanUp = pluginToDelete.deleteRecursively();
+                if (didCleanUp)
+                {
+                    DBG("Successfully deleted unloaded plugin copy");
+                    break;
+                }
+                else
+                {
+                    DBG("Failed to delete unloaded plugin copy");
+                }
+            }
+            CYDER_ASSERT(didCleanUp);
+        });
+        #else
+        bool didCleanUp = pluginToDelete.deleteRecursively();
+        if (didCleanUp)
+        {
+            DBG("Successfully deleted unloaded plugin copy");
+        }
+        else
+        {
+            DBG("Failed to delete unloaded plugin copy");
+            CYDER_ASSERT_FALSE;
+        }
+        #endif // JUCE_WINDOWS
+    }
 }
 
 //==============================================================================
