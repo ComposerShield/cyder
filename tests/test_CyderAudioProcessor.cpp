@@ -158,7 +158,6 @@ TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
     }
 }
 
-#if JUCE_MAC // TODO: figure out a way to make cleanup work on PC
 TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
 {
     CyderAudioProcessor cyderProcessor;
@@ -188,6 +187,10 @@ TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
     EXPECT_TRUE(cyderProcessor.getWrappedPluginEditor() == nullptr);
     EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::idle);
     
+    #if JUCE_WINDOWS
+    juce::Thread::sleep(2000); // PC requires a pause before deleting the unloaded copied plugin
+    #endif
+    
     // Ensure our copied plugin path was deleted
     ASSERT_FALSE(copiedPath.exists());
 }
@@ -216,9 +219,14 @@ TEST(CyderAudioProcessorDestructor, DeleteCopiedPluginWhenCyderIsDestroyed)
         // Ensure our copied plugin path exists
         copiedPath = cyderProcessor.getCurrentWrappedPluginPathCopy();
         ASSERT_TRUE(copiedPath.exists());
-    } // Processor deleted
+    } // Processor deleted, should unload before finished destructing
+    
+    #if JUCE_WINDOWS
+    juce::Thread::sleep(2000); // PC requires a pause before deleting the unloaded copied plugin
+    #endif
     
     // Ensure our copied plugin path was deleted
     ASSERT_FALSE(copiedPath.exists());
 }
-#endif // JUCE_MAC
+
+// TODO: add tests to ensure cleanup after a hot reload of the wrapped plugin
