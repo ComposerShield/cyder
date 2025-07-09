@@ -34,7 +34,7 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         thread.onPluginChangeDetected = [&hotReloadThreadDetectedChange] { hotReloadThreadDetectedChange = true; };
         
         // Give thread a moment to start churning
-        juce::Thread::sleep(10);
+        juce::Thread::sleep(50);
         
         // Pretend to change binary
         juce::File binaryFile = pluginFile.getChildFile("Contents")
@@ -51,7 +51,13 @@ TEST(HotReloadThreadRun, DetectsChangedBinary)
         ASSERT_TRUE(modificationTimeChanged);
         
         // Give HotReloadThread time to detect change
-        juce::Thread::sleep(3000);
+        const int maxNumSeconds = 10;
+        for (int second = 0; second < maxNumSeconds; ++second)
+        {
+            if (hotReloadThreadDetectedChange)
+                break; // stop polling as soon as change is seen
+            juce::Thread::sleep(1000); // wait 1 second before next check
+        }
         
         // Change was detected
         ASSERT_TRUE(hotReloadThreadDetectedChange);

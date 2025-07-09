@@ -23,6 +23,45 @@
 #include <memory>
 #include <utility>
 
+#if JUCE_WINDOWS
+#define WIN32_LEAN_AND_MEAN // speed up compilation, prevent namespace pollution
+#include <Windows.h> // for GetLastError()
+#endif
+
+//==============================================================================
+
+/**
+  FYI - Must pass by value instead of const ref to ensure thread does not have dangling ref...
+*/
+void deleteStalePlugin(juce::File pluginToDelete) noexcept
+{
+    // Cleanup: Delete copied plugin
+    if (pluginToDelete.exists())
+    {
+        #if JUCE_WINDOWS
+        // Windows requires a pause before deleting the copied plugin so we 
+        // can do that in another thread to not hold up main thread
+        std::thread cleanupWorkerThread([=]
+        {
+            juce::Thread::sleep(1000);
+        #endif
+
+            bool didCleanUp = pluginToDelete.deleteRecursively();
+            if (didCleanUp)
+                DBG("Successfully deleted unloaded plugin copy");
+            else
+            {
+                DBG("Failed to delete unloaded plugin copy");
+                CYDER_ASSERT_FALSE;
+            }
+
+        #if JUCE_WINDOWS
+        });
+        cleanupWorkerThread.detach(); // Don't wait for it to finish
+        #endif
+    }
+}
+
 //==============================================================================
 CyderAudioProcessor::CyderAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -287,11 +326,10 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     }
     
     // Cleanup: Delete copied plugin
-    if (currentPluginFileCopy.exists())
-    {
-        [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
-        CYDER_ASSERT(didCleanUp);
-    }
+    deleteStalePlugin(currentPluginFileCopy);
+    currentPluginFileCopy = juce::File(); // reset
+
+    // Update refs
     currentPluginFileOriginal = pluginFile;
     currentPluginFileCopy = incomingCopiedPlugin;
     
@@ -316,6 +354,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         });
     };
     
+    // Update Status
     currentStatus = reloadingSamePlugin ? CyderStatus::successfullyReloadedPlugin
                                         : CyderStatus::successfullyLoadedPlugin;
     return true;
@@ -344,12 +383,7 @@ void CyderAudioProcessor::unloadPlugin()
     currentPluginFileOriginal = juce::File(); // reset
     
     // Cleanup: Delete copied plugin
-    if (currentPluginFileCopy.exists())
-    {
-        [[maybe_unused]] bool didCleanUp = currentPluginFileCopy.deleteRecursively();
-        currentPluginFileCopy = juce::File(); // reset
-        CYDER_ASSERT(didCleanUp);
-    }
+    deleteStalePlugin(currentPluginFileCopy);
     
     // Update status
     currentStatus = CyderStatus::idle;
