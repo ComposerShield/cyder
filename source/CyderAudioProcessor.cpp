@@ -19,16 +19,39 @@
 #include "HotReloadThread.hpp"
 #include "Utilities.hpp"
 
+#include <atomic>
 #include <limits>
 #include <memory>
 #include <utility>
 
-#if JUCE_WINDOWS
-#define WIN32_LEAN_AND_MEAN // speed up compilation, prevent namespace pollution
-#include <Windows.h> // for GetLastError()
-#endif
-
 //==============================================================================
+
+#if JUCE_WINDOWS
+static std::atomic<int> numInstances = 0;
+
+/** */
+void deleteCyderPluginsTempDirectoryAfterShutdown() noexcept
+{
+    // Cleanup entire fold
+    auto cyderTempParentFolder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("CyderPlugins");
+    if (! cyderTempParentFolder.exists())
+        return;
+
+    auto folderToDeleteAsString = cyderTempParentFolder.getFullPathName();
+
+    // Build a cmd line that:
+    //   1) Waits a couple of seconds (so the parent process has *really* exited).
+    //   2) Then deletes the directory tree.
+    // The Windows “timeout” command will sleep without needing extra tools:
+    auto cmd = juce::String("cmd /C timeout /T 2 /NOBREAK >nul && ")
+        + "rmdir /S /Q \"" + folderToDeleteAsString + "\"";
+
+    juce::ChildProcess deleter;
+    // By default JUCE’s ChildProcess uses CreateProcess with bInheritHandles = FALSE,
+    // so the child won’t inherit *any* of your open handles.
+    deleter.start(cmd);
+}
+#endif // JUCE_WINDOWS
 
 /**
   FYI - Must pass by value instead of const ref to ensure thread does not have dangling ref...
@@ -52,7 +75,10 @@ void deleteStalePlugin(juce::File pluginToDelete) noexcept
             else
             {
                 DBG("Failed to delete unloaded plugin copy");
+                #if JUCE_MAC 
+                // we cannot guarantee immediate cleanup on PC, so we'll try again later on shutdown
                 CYDER_ASSERT_FALSE;
+                #endif
             }
 
         #if JUCE_WINDOWS
@@ -75,6 +101,9 @@ CyderAudioProcessor::CyderAudioProcessor()
      )
 #endif
 {
+#if JUCE_WINDOWS
+    ++numInstances;
+#endif
 }
 
 CyderAudioProcessor::~CyderAudioProcessor()
@@ -82,6 +111,11 @@ CyderAudioProcessor::~CyderAudioProcessor()
     if (hotReloadThread != nullptr)
         hotReloadThread->stopThread(1500);
     unloadPlugin();
+
+#if JUCE_WINDOWS
+    if (--numInstances <= 0)
+        deleteCyderPluginsTempDirectoryAfterShutdown();
+#endif
 }
 
 void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
