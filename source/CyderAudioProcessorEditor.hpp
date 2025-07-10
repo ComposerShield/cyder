@@ -47,6 +47,8 @@ private:
     
     std::unique_ptr<CyderHeaderBar> headerBar;
     
+    std::unique_ptr<juce::FileChooser> fileChooser;
+    
     std::optional<int> cachedWidth;
     std::optional<int> cachedHeight;
     
@@ -62,6 +64,9 @@ private:
     void componentMovedOrResized(juce::Component& component,
                                  bool wasMoved,
                                  bool wasResized) override;
+    
+    void mouseDoubleClick(const juce::MouseEvent& event) override;
 
+    JUCE_DECLARE_WEAK_REFERENCEABLE (CyderAudioProcessorEditor)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CyderAudioProcessorEditor)
 };
