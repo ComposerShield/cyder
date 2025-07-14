@@ -395,12 +395,19 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
         wrappedPluginEditor.reset();
     }
     
+    // Remove processor listener
+    if (wrappedPlugin != nullptr)
+        wrappedPlugin->removeListener(this);
+    
     // Swap out processor
     {
         juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset(newInstance.release());
         setLatencySamples(wrappedPlugin->getLatencySamples());
     }
+    
+    // Add processor listener
+    wrappedPlugin->addListener(this);
     
     // Cleanup: Delete copied plugin
     deleteStalePlugin(currentPluginFileCopy);
@@ -439,12 +446,18 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
 
 void CyderAudioProcessor::unloadPlugin()
 {
+    if (wrappedPlugin == nullptr)
+        return;
+    
     // Stop and reset hot reload thread first so we don't reload after unloading
     if (hotReloadThread != nullptr)
     {
         hotReloadThread->stopThread(1500);
         hotReloadThread.reset();
     }
+    
+    // Remove processor listener
+    wrappedPlugin->removeListener(this);
     
     // Unload wrapped editor
     if (auto* cyderEditor = dynamic_cast<CyderAudioProcessorEditor*>(getActiveEditor()))
@@ -457,10 +470,13 @@ void CyderAudioProcessor::unloadPlugin()
         juce::ScopedLock lock(getCallbackLock()); // lock audio thread
         wrappedPlugin.reset();
     }
-    currentPluginFileOriginal = juce::File(); // reset
     
     // Cleanup: Delete copied plugin
+    currentPluginFileOriginal = juce::File(); // reset
     deleteStalePlugin(currentPluginFileCopy);
+    
+    // Update latency
+    setLatencySamples(0);
     
     // Update status
     currentStatus = CyderStatus::idle;
@@ -505,6 +521,16 @@ void CyderAudioProcessor::transferPluginState(juce::AudioProcessor& destinationP
     wrappedPlugin->getStateInformation(memoryBlock);
     destinationProcessor.setStateInformation(memoryBlock.getData(),
                                              static_cast<int>(memoryBlock.getSize()));
+}
+
+void CyderAudioProcessor::audioProcessorChanged (juce::AudioProcessor* processor,
+                                                 const AudioProcessorListener::ChangeDetails& details)
+{
+    if (processor != wrappedPlugin.get())
+        return;
+    
+    if (details.latencyChanged)
+        setLatencySamples(wrappedPlugin->getLatencySamples());
 }
 
 //==============================================================================

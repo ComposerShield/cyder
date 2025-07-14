@@ -35,7 +35,9 @@ class HotReloadThread;
 
 //==============================================================================
 
-class CyderAudioProcessor : public juce::AudioProcessor
+class CyderAudioProcessor
+: public juce::AudioProcessor
+, public juce::AudioProcessorListener
 {
 public:
     CyderAudioProcessor();
@@ -91,6 +93,14 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    //==============================================================================
+    
+    void audioProcessorParameterChanged (juce::AudioProcessor* /*processor*/,
+                                         int /*parameterIndex*/,
+                                         float /*newValue*/) override {}
+    void audioProcessorChanged (juce::AudioProcessor* processor,
+                                const AudioProcessorListener::ChangeDetails& details) override;
     
     //==============================================================================
     
