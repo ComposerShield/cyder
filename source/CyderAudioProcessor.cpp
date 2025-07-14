@@ -180,21 +180,24 @@ void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     // Special case where stereo plugin is given mono buffer (e.g. Studio One)
     if (monoBufferGivenToStereoPlugin)
-    {
-        monoToStereoBuffer.setSize(/*numChannels*/2,
-                                   /*numSamples*/buffer.getNumSamples(),
-                                   /*keepExistingContent*/false,
-                                   /*clearExtraSpace*/false,
-                                   /*avoidReallocating*/true);
-        monoToStereoBuffer.copyFrom(0, 0, buffer, 0, 0, buffer.getNumSamples());
-        monoToStereoBuffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
-        
-        wrappedPlugin->processBlock(monoToStereoBuffer, midiMessages);
-        
-        buffer.copyFrom(0, 0, monoToStereoBuffer, 0, 0, buffer.getNumSamples());
-    }
+        processUsingMonoToStereoBuffer(buffer, midiMessages);
     else
         wrappedPlugin->processBlock(buffer, midiMessages);
+}
+
+void CyderAudioProcessor::processUsingMonoToStereoBuffer(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    monoToStereoBuffer.setSize(/*numChannels*/2,
+                               /*numSamples*/buffer.getNumSamples(),
+                               /*keepExistingContent*/false,
+                               /*clearExtraSpace*/false,
+                               /*avoidReallocating*/true);
+    monoToStereoBuffer.copyFrom(0, 0, buffer, 0, 0, buffer.getNumSamples());
+    monoToStereoBuffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
+    
+    wrappedPlugin->processBlock(monoToStereoBuffer, midiMessages);
+    
+    buffer.copyFrom(0, 0, monoToStereoBuffer, 0, 0, buffer.getNumSamples());
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::createEditor()
