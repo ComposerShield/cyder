@@ -109,5 +109,7 @@ private:
     
     void transferPluginState(juce::AudioProcessor& destinationProcessor) noexcept;
     
+    void processUsingMonoToStereoBuffer(juce::AudioBuffer<float>&, juce::MidiBuffer&);
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CyderAudioProcessor)
 };
