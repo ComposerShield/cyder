@@ -123,16 +123,10 @@ void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     if (wrappedPlugin == nullptr)
         return;
     
-    {
-        [[maybe_unused]] const auto inputChannels = getTotalNumInputChannels();
-        [[maybe_unused]] const auto outputChannels = getTotalNumOutputChannels();
-        jassert(inputChannels == outputChannels); // only support basic mono or stereo I/O
-    }
-    
     // Wrapped plugin can only be mono or stereo
     // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
     bool isStereo = getTotalNumOutputChannels();
-    bool wrappedPluginIsStereo = getTotalNumOutputChannels();
+    bool wrappedPluginIsStereo = wrappedPlugin->getTotalNumOutputChannels();
     auto numChannels = isStereo ? 2 : 1;
     
     if (isStereo != wrappedPluginIsStereo)
@@ -179,7 +173,28 @@ void CyderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     auto playhead = getPlayHead();
     wrappedPlugin->setPlayHead(playhead);
-    wrappedPlugin->processBlock(buffer, midiMessages);
+    
+    const bool wrappedPluginIsStereo = (2 == wrappedPlugin->getTotalNumOutputChannels());
+    const auto numChannels = buffer.getNumChannels();
+    const bool monoBufferGivenToStereoPlugin = (wrappedPluginIsStereo && numChannels==1);
+    
+    // Special case where stereo plugin is given mono buffer (e.g. Studio One)
+    if (monoBufferGivenToStereoPlugin)
+    {
+        monoToStereoBuffer.setSize(/*numChannels*/2,
+                                   /*numSamples*/buffer.getNumSamples(),
+                                   /*keepExistingContent*/false,
+                                   /*clearExtraSpace*/false,
+                                   /*avoidReallocating*/true);
+        monoToStereoBuffer.copyFrom(0, 0, buffer, 0, 0, buffer.getNumSamples());
+        monoToStereoBuffer.copyFrom(1, 0, buffer, 0, 0, buffer.getNumSamples());
+        
+        wrappedPlugin->processBlock(monoToStereoBuffer, midiMessages);
+        
+        buffer.copyFrom(0, 0, monoToStereoBuffer, 0, 0, buffer.getNumSamples());
+    }
+    else
+        wrappedPlugin->processBlock(buffer, midiMessages);
 }
 
 juce::AudioProcessorEditor* CyderAudioProcessor::createEditor()
