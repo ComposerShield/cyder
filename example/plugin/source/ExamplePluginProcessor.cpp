@@ -24,9 +24,20 @@ void ExamplePluginAudioProcessor::releaseResources()
 
 bool ExamplePluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    // Only allow stereo in → stereo out
-    return layouts.getMainInputChannelSet()  == juce::AudioChannelSet::stereo()
-        && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+    // Get the main output bus layout
+    auto mainOut = layouts.getMainOutputChannelSet();
+
+    // Only allow mono or stereo
+    if (mainOut != juce::AudioChannelSet::mono()
+        && mainOut != juce::AudioChannelSet::stereo())
+        return false;
+
+    // Require input layout to match output
+    auto mainIn = layouts.getMainInputChannelSet();
+    if (mainIn != mainOut)
+        return false;
+
+    return true;
 }
 
 void ExamplePluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
