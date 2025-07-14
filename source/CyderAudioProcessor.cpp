@@ -336,7 +336,7 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     
     // Wrapped plugin can only be mono or stereo
     // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
-    const bool isStereo    = getTotalNumOutputChannels();
+    const bool isStereo    = getTotalNumOutputChannels() == 2;
     const auto numChannels = isStereo ? 2 : 1;
     const auto sampleRate  = getSampleRate();
     const auto blockSize   = getBlockSize();
