@@ -123,6 +123,12 @@ void CyderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     if (wrappedPlugin == nullptr)
         return;
     
+    {
+        [[maybe_unused]] const auto inputChannels = getTotalNumInputChannels();
+        [[maybe_unused]] const auto outputChannels = getTotalNumOutputChannels();
+        jassert(inputChannels == outputChannels); // only support basic mono or stereo I/O
+    }
+    
     // Wrapped plugin can only be mono or stereo
     // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
     bool isStereo = getTotalNumOutputChannels();
@@ -148,8 +154,21 @@ void CyderAudioProcessor::releaseResources()
     wrappedPlugin->releaseResources();
 }
 
-bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& /*layouts*/) const
+bool CyderAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
+    // Get the main output bus layout
+    auto mainOut = layouts.getMainOutputChannelSet();
+
+    // Only allow mono or stereo
+    if (mainOut != juce::AudioChannelSet::mono()
+        && mainOut != juce::AudioChannelSet::stereo())
+        return false;
+
+    // Require input layout to match output
+    auto mainIn = layouts.getMainInputChannelSet();
+    if (mainIn != mainOut)
+        return false;
+
     return true;
 }
 
@@ -293,6 +312,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     
     juce::File pluginFile(pluginPath);
     const bool reloadingSamePlugin = pluginFile == currentPluginFileOriginal;
+    
+    {
+        [[maybe_unused]] const auto inputChannels = getTotalNumInputChannels();
+        [[maybe_unused]] const auto outputChannels = getTotalNumOutputChannels();
+        jassert(inputChannels == outputChannels); // only support basic mono or stereo I/O
+    }
     
     // Wrapped plugin can only be mono or stereo
     // If Cyder is mono-to-stereo, then wrapped plugin must be stereo
