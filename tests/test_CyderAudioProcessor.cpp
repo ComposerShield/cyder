@@ -158,6 +158,70 @@ TEST(CyderAudioProcessorUnloadPlugin, HotReloadThreadIsStoppedAfterUnload)
     }
 }
 
+TEST(CyderAudioProcessorLoadPlugin, WrappedPluginMatchesIOMono)
+{
+    CyderAudioProcessor cyderProcessor;
+    
+    constexpr auto numChannels = 1;
+    constexpr auto sampleRate  = 44100.0;
+    constexpr auto blocksize   = 1024;
+    
+    // Set mono
+    cyderProcessor.setPlayConfigDetails(numChannels, numChannels, sampleRate, blocksize);
+    
+    juce::File currentFile(__FILE__);
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+        .getParentDirectory() // root dir
+        .getChildFile("ExamplePlugin")
+        .withFileExtension("vst3");
+    
+    // Load example plugin
+    {
+        auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+        ASSERT_TRUE(result);
+        EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::successfullyLoadedPlugin);
+    }
+    
+    // Expect wrapped processor to be mono
+    auto wrappedProcessor = cyderProcessor.getWrappedPluginProcessor();
+    EXPECT_EQ(1, wrappedProcessor->getTotalNumInputChannels());
+    EXPECT_EQ(1, wrappedProcessor->getTotalNumOutputChannels());
+}
+
+TEST(CyderAudioProcessorLoadPlugin, WrappedPluginMatchesIOStereo)
+{
+    CyderAudioProcessor cyderProcessor;
+    
+    constexpr auto numChannels = 2;
+    constexpr auto sampleRate  = 44100.0;
+    constexpr auto blocksize   = 1024;
+    
+    // Set stereo
+    cyderProcessor.setPlayConfigDetails(numChannels, numChannels, sampleRate, blocksize);
+    
+    juce::File currentFile(__FILE__);
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+        .getParentDirectory() // root dir
+        .getChildFile("ExamplePlugin")
+        .withFileExtension("vst3");
+    
+    // Load example plugin
+    {
+        auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+        ASSERT_TRUE(result);
+        EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::successfullyLoadedPlugin);
+    }
+    
+    // Expect wrapped processor to be mono
+    auto wrappedProcessor = cyderProcessor.getWrappedPluginProcessor();
+    EXPECT_EQ(2, wrappedProcessor->getTotalNumInputChannels());
+    EXPECT_EQ(2, wrappedProcessor->getTotalNumOutputChannels());
+}
+
 #if JUCE_MAC // TODO: figure out a way to make cleanup work on PC
 TEST(CyderAudioProcessorUnloadPlugin, DeleteCopiedPluginWhenNoLongerNeeded)
 {
