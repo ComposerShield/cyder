@@ -44,7 +44,13 @@ void CyderAudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::grey);
     g.setColour(juce::Colours::white);
-    g.drawText("Drag VST3 plugin here.", getLocalBounds(), juce::Justification::centred);
+    g.drawFittedText("Drag VST3 plugin here or\n"
+                     "double click to open file browser.",
+                     getLocalBounds(),
+                     juce::Justification::centred,
+                     /*maximumNumberOfLines*/2,
+                     /*minimumHorizontalScale*/0.0f,
+                     juce::GlyphArrangementOptions().withLineSpacing(10.f));
     
     if (fileDraggingOverEditor)
     {
@@ -144,4 +150,44 @@ void CyderAudioProcessorEditor::componentMovedOrResized(juce::Component& /*compo
 bool CyderAudioProcessorEditor::isFileDraggingOverEditor() const noexcept
 {
     return fileDraggingOverEditor;
+}
+
+void CyderAudioProcessorEditor::mouseDoubleClick(const juce::MouseEvent&)
+{
+    if (fileChooser != nullptr)
+        return; // already open
+    
+    if (processor.getWrappedPluginProcessor() != nullptr)
+        return; // already have a plugin loaded, we don't want to interfere with interacting with that plugin
+    
+    fileChooser = std::make_unique<juce::FileChooser>(/*dialogBoxTitle*/"Select VST3 to load.",
+                                                      /*initialFileOrDirectory*/juce::File(),
+                                                      /*filePatternsAllowed*/juce::String("*.VST3;*.vst3"),
+                                                      /*useOSNativeDialogBox*/true,
+                                                      /*treatFilePackagesAsDirectories*/false,
+                                                      /*parentComponent*/this);
+    
+    auto flags = juce::FileBrowserComponent::openMode
+                 | juce::FileBrowserComponent::canSelectFiles;
+    fileChooser->launchAsync(flags,
+                             [safePtr = juce::WeakReference<CyderAudioProcessorEditor>(this)]
+                             (const juce::FileChooser& fileChooserPostSelection)
+    {
+        if (safePtr.wasObjectDeleted())
+            return; // prevent crash
+        
+        auto selectedFile = fileChooserPostSelection.getResult();
+        if (! selectedFile.exists())
+        {
+            safePtr->fileChooser.reset(); // delete file browser
+            return;
+        }
+        
+        [[maybe_unused]] bool loadResult = safePtr->processor.loadPlugin(selectedFile.getFullPathName());
+        jassert(loadResult);
+        
+        safePtr->loadWrappedEditor(safePtr->processor.getWrappedPluginEditor());
+        
+        safePtr->fileChooser.reset(); // delete file browser
+    });
 }
