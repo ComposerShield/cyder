@@ -286,3 +286,42 @@ TEST(CyderAudioProcessorDestructor, DeleteCopiedPluginWhenCyderIsDestroyed)
     ASSERT_FALSE(copiedPath.exists());
 }
 #endif // JUCE_MAC
+
+TEST(CyderAudioProcessorAudioProcessorChanged, LatencySyncedWithWrappedPlugin)
+{
+    CyderAudioProcessor cyderProcessor;
+    
+    constexpr auto numChannels = 2;
+    constexpr auto sampleRate  = 44100.0;
+    constexpr auto blocksize   = 1024;
+    
+    // Set stereo
+    cyderProcessor.setPlayConfigDetails(numChannels, numChannels, sampleRate, blocksize);
+    
+    juce::File currentFile(__FILE__);
+    // ExamplePlugin.vst3 must have already been built and copied into root directory
+    // so we can use it as a testable VST3
+    juce::File pluginFile = currentFile.getParentDirectory() // "tests"
+        .getParentDirectory() // root dir
+        .getChildFile("ExamplePlugin")
+        .withFileExtension("vst3");
+    
+    // Latency should be 0 before wrapping plugin
+    ASSERT_EQ(0, cyderProcessor.getLatencySamples());
+    
+    // Load example plugin
+    {
+        auto result = cyderProcessor.loadPlugin(pluginFile.getFullPathName());
+        ASSERT_TRUE(result);
+        EXPECT_TRUE(cyderProcessor.getCurrentStatus() == CyderStatus::successfullyLoadedPlugin);
+    }
+    
+    // Latency should still be 0
+    ASSERT_EQ(0, cyderProcessor.getLatencySamples());
+    
+    // Set latency in wrapped plugin
+    auto* wrappedPlugin = cyderProcessor.getWrappedPluginProcessor();
+    constexpr auto testLatencyAmount = 256;
+    wrappedPlugin->setLatencySamples(testLatencyAmount);
+    EXPECT_EQ(testLatencyAmount, cyderProcessor.getLatencySamples());
+}
