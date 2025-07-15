@@ -6,7 +6,7 @@ An FX audio plugin wrapper that enables "hot-reloading" of the wrapped plugin.
 - Mac or PC (PC still a work-in-progress)
 - CMake v3.15 or later
 - Git
-- A C++ compiler (Clang, Apple Clang, or MSVC supported)
+- C++ compiler (Clang, Apple Clang, or MSVC supported)
 
 ## Cloning the repository
 Clone the repository (no submodules in this project):
@@ -18,6 +18,12 @@ git clone git@github.com:ComposerShield/cyder.git
 Run the following commands:
 ```bash
 cmake . -B build
+cmake --build build
+```
+
+Optional: specify a generator e.g.
+```bash
+cmake . -B build -G Xcode
 cmake --build build
 ```
 
