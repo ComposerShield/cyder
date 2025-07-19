@@ -34,20 +34,6 @@ public:
     }
 };
 
-const char* getStatusAsString(CyderStatus status) noexcept
-{
-    switch(status)
-    {
-        case CyderStatus::idle                       : return "";
-        case CyderStatus::loading                    : return "";
-        case CyderStatus::reloading                  : return "";
-        case CyderStatus::successfullyLoadedPlugin   : return "Successfully loaded plugin";
-        case CyderStatus::successfullyReloadedPlugin : return "Successfully reloaded plugin";
-        case CyderStatus::failedToLoadPlugin         : return "Failed to load plugin...";
-        case CyderStatus::failedToReloadPlugin       : return "Failed to reload plugin...";
-    };
-}
-
 //==============================================================================
 
 CyderHeaderBar::CyderHeaderBar(CyderAudioProcessor& _processor)
@@ -60,13 +46,27 @@ CyderHeaderBar::CyderHeaderBar(CyderAudioProcessor& _processor)
     addAndMakeVisible(unloadPluginButton);
     unloadPluginButton.addListener(this);
     
-    startTimer(/*ms*/500);
+    startTimer(/*ms*/200);
 }
 
 CyderHeaderBar::~CyderHeaderBar()
 {
     stopTimer();
     setLookAndFeel(nullptr);
+}
+
+const char* CyderHeaderBar::getStatusAsString(CyderStatus status) const noexcept
+{
+    switch(status)
+    {
+        case CyderStatus::idle                       : return "";
+        case CyderStatus::loading                    : return "";
+        case CyderStatus::reloading                  : return "";
+        case CyderStatus::successfullyLoadedPlugin   : return "Successfully loaded plugin";
+        case CyderStatus::successfullyReloadedPlugin : return "Successfully reloaded plugin";
+        case CyderStatus::failedToLoadPlugin         : return "Failed to load plugin...";
+        case CyderStatus::failedToReloadPlugin       : return "Failed to reload plugin...";
+    };
 }
 
 void CyderHeaderBar::paint(juce::Graphics& g)
@@ -113,4 +113,9 @@ void CyderHeaderBar::timerCallback()
         timeSinceStatusReportedMs = 0;
         repaint();
     }
+}
+
+juce::String CyderHeaderBar::getCurrentStatusString() const noexcept
+{
+    return currentStatusString;
 }

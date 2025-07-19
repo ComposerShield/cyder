@@ -26,7 +26,7 @@
 
 //==============================================================================
 
-#if JUCE_WINDOWS
+//#if JUCE_WINDOWS
 static std::atomic<int> numInstances = 0;
 
 /** */
@@ -51,7 +51,7 @@ void deleteCyderPluginsTempDirectoryAfterShutdown() noexcept
     // so the child won’t inherit *any* of your open handles.
     deleter.start(cmd);
 }
-#endif // JUCE_WINDOWS
+//#endif  JUCE_WINDOWS
 
 /**
   FYI - Must pass by value instead of const ref to ensure thread does not have dangling ref...
@@ -101,9 +101,10 @@ CyderAudioProcessor::CyderAudioProcessor()
      )
 #endif
 {
-#if JUCE_WINDOWS
+//#if JUCE_WINDOWS
     ++numInstances;
-#endif
+    jassert(numInstances==1);
+//#endif
 }
 
 CyderAudioProcessor::~CyderAudioProcessor()
@@ -112,6 +113,7 @@ CyderAudioProcessor::~CyderAudioProcessor()
         hotReloadThread->stopThread(1500);
     unloadPlugin();
 
+    --numInstances;
 #if JUCE_WINDOWS
     if (--numInstances <= 0)
         deleteCyderPluginsTempDirectoryAfterShutdown();
@@ -432,9 +434,12 @@ bool CyderAudioProcessor::loadPlugin(const juce::String& pluginPath)
     hotReloadThread = std::make_unique<HotReloadThread>(pluginFile); // auto starts thread
     hotReloadThread->onPluginChangeDetected = [&]
     {
-        juce::MessageManager::callAsync([&]
+        juce::MessageManager::callAsync([safeThis = juce::WeakReference<CyderAudioProcessor>(this)]
         {
-            loadPlugin(hotReloadThread->getFullPluginPath());
+            if (safeThis.wasObjectDeleted())
+                return;
+            
+            safeThis->loadPlugin(safeThis->hotReloadThread->getFullPluginPath());
         });
     };
     
