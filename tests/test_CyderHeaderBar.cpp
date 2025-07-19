@@ -20,7 +20,7 @@ TEST(CyderHeaderBarGetCurrentStatusString, CheckStatusStringAfterReloadingPlugin
     editor.reset(dynamic_cast<CyderAudioProcessorEditor*>(cyderProcessor.createEditor()));
     ASSERT_TRUE(editor != nullptr);
     
-    const auto& headerBar = editor->getHeaderBar();
+    auto& headerBar = editor->getHeaderBar();
     
     constexpr auto numChannels = 2;
     constexpr auto sampleRate  = 44100.0;
@@ -55,6 +55,9 @@ TEST(CyderHeaderBarGetCurrentStatusString, CheckStatusStringAfterReloadingPlugin
         EXPECT_EQ(statusString, expectedString);
     }
     
+    // Stop clearing status for a moment while we test the current status
+    headerBar.stopReportingStatus();
+    
     // Trigger plugin modified callback
     {
         auto* thread = dynamic_cast<HotReloadThread*>(cyderProcessor.getHotReloadThread());
@@ -66,6 +69,9 @@ TEST(CyderHeaderBarGetCurrentStatusString, CheckStatusStringAfterReloadingPlugin
         juce::MessageManager::getInstance()->runDispatchLoopUntil(200);
         EXPECT_EQ(cyderProcessor.getCurrentStatus(), CyderStatus::successfullyReloadedPlugin);
     }
+    
+    // Allow headerBar to resume querying and resetting the status
+    headerBar.startReportingStatus();
     
     // Check status string after a short wait for successfullyReloadedPlugin
     {

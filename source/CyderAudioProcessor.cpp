@@ -492,6 +492,11 @@ CyderStatus CyderAudioProcessor::getCurrentStatus() const noexcept
     return currentStatus;
 }
 
+CyderStatus CyderAudioProcessor::getCurrentStatusAndClear() noexcept
+{
+    return std::exchange(currentStatus, CyderStatus::idle);
+}
+
 juce::AudioProcessor* CyderAudioProcessor::getWrappedPluginProcessor() const noexcept
 {
     return dynamic_cast<juce::AudioProcessor*>(wrappedPlugin.get());
