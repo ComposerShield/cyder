@@ -50,8 +50,18 @@ public:
     /** */
     void unloadPlugin();
     
-    /** */
+    /**
+     Get current status without resetting it to Idle.
+     @returns current CyderStatus
+     @see getCurrentStatusAndClear()
+     */
     CyderStatus getCurrentStatus() const noexcept;
+    /**
+     Consumes current status and clears it, resetting it to idle.
+     @returns current CyderStatus
+     @see getCurrentStatus()
+     */
+    CyderStatus getCurrentStatusAndClear() noexcept;
     
     /** */
     juce::AudioProcessor* getWrappedPluginProcessor() const noexcept;

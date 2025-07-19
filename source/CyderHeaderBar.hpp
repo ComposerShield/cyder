@@ -36,11 +36,26 @@ public:
     CyderHeaderBar(CyderAudioProcessor& processor);
     ~CyderHeaderBar();
     
-    /* */
+    /* @returns our user-facing string messages for a given status. */
     const char* getStatusAsString(CyderStatus status) const noexcept;
     
-    /** */
+    /** @returns current status that has been detected by the CyderHeaderBar and interpreted as a String */
     juce::String getCurrentStatusString() const noexcept;
+    
+    /**
+     Begin timer callbacks to query current status and clear it.
+     Automatically called upon construction.
+     
+     @see stopReportingStatus()
+     */
+    void startReportingStatus() noexcept;
+    
+    /**
+     Stop timer callbacks querying and clearing status.
+     
+     @see startReportingStatus()
+     */
+    void stopReportingStatus() noexcept;
     
 private:
     CyderAudioProcessor& processor;

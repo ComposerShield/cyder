@@ -46,7 +46,7 @@ CyderHeaderBar::CyderHeaderBar(CyderAudioProcessor& _processor)
     addAndMakeVisible(unloadPluginButton);
     unloadPluginButton.addListener(this);
     
-    startTimer(/*ms*/200);
+    startReportingStatus();
 }
 
 CyderHeaderBar::~CyderHeaderBar()
@@ -96,17 +96,24 @@ void CyderHeaderBar::buttonClicked(juce::Button* button)
 
 void CyderHeaderBar::timerCallback()
 {
-    if (currentStatusString.isNotEmpty()
-        && timeSinceStatusReportedMs > lengthOfTimeToDisplayStatusMs)
+    bool shouldClearStatusDisplay = currentStatusString.isNotEmpty()
+                                    && (timeSinceStatusReportedMs > lengthOfTimeToDisplayStatusMs);
+    
+    if (shouldClearStatusDisplay)
     {
         currentStatusString = "";
         repaint();
+        
+        currentStatus = CyderStatus::idle; // resume checking for new status
     }
     else
-        timeSinceStatusReportedMs += getTimerInterval();
+        timeSinceStatusReportedMs += getTimerInterval(); // advance elapsed time
     
-    auto status = processor.getCurrentStatus();
-    if (currentStatus != status)
+    
+    auto status = processor.getCurrentStatusAndClear(); // "consume" any status change when checking
+    bool somethingMeaningfulHasOccured = (status != CyderStatus::idle)
+                                         && (currentStatus != status);
+    if (somethingMeaningfulHasOccured)
     {
         currentStatus = status;
         currentStatusString = getStatusAsString(currentStatus);
@@ -118,4 +125,14 @@ void CyderHeaderBar::timerCallback()
 juce::String CyderHeaderBar::getCurrentStatusString() const noexcept
 {
     return currentStatusString;
+}
+
+void CyderHeaderBar::startReportingStatus() noexcept
+{
+    startTimer(/*ms*/200);
+}
+
+void CyderHeaderBar::stopReportingStatus() noexcept
+{
+    stopTimer();
 }
