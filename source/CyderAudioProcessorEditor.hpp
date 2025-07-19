@@ -37,10 +37,18 @@ public:
 
     void resized() override;
     
+    /** */
     void unloadWrappedEditor(juce::AudioProcessorEditor* editor, bool shouldCacheSize = false);
+    /** */
     void loadWrappedEditor(juce::AudioProcessorEditor* editor);
     
+    /** */
     [[nodiscard]] bool isFileDraggingOverEditor() const noexcept;
+    
+    /** */
+    CyderHeaderBar& getHeaderBar() noexcept;
+    /** */
+    const CyderHeaderBar& getHeaderBar() const noexcept;
 
 private:
     CyderAudioProcessor& processor;

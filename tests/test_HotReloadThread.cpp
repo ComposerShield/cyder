@@ -102,11 +102,11 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     auto fileWasCreated = resourceFile.create();
     ASSERT_TRUE(fileWasCreated.ok());
     
-    // Give HotReloadThread time to detect change (should still be
-    juce::Thread::sleep(1000);
+    // Give HotReloadThread time to detect change
+    juce::Thread::sleep(2000);
     
     // Change was detected
-    ASSERT_TRUE(hotReloadThreadDetectedChange);
+    EXPECT_TRUE(hotReloadThreadDetectedChange);
     
     // Stop thread
     [[maybe_unused]] bool threadStoppedSafely = thread.stopThread(2000);
@@ -115,4 +115,5 @@ TEST(HotReloadThreadRun, DetectsAddedFile)
     // Cleanup
     [[maybe_unused]] bool fileDeleted = resourceFile.deleteFile();
     jassert(fileDeleted);
+    jassert(resourceFile.deleteFile()); // ensure we delete the garbage file we created!
 }

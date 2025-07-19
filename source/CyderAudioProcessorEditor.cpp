@@ -191,3 +191,13 @@ void CyderAudioProcessorEditor::mouseDoubleClick(const juce::MouseEvent&)
         safePtr->fileChooser.reset(); // delete file browser
     });
 }
+
+CyderHeaderBar& CyderAudioProcessorEditor::getHeaderBar() noexcept
+{
+    return *headerBar;
+}
+
+const CyderHeaderBar& CyderAudioProcessorEditor::getHeaderBar() const noexcept
+{
+    return *headerBar;
+}

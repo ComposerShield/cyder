@@ -36,6 +36,12 @@ public:
     CyderHeaderBar(CyderAudioProcessor& processor);
     ~CyderHeaderBar();
     
+    /* */
+    const char* getStatusAsString(CyderStatus status) const noexcept;
+    
+    /** */
+    juce::String getCurrentStatusString() const noexcept;
+    
 private:
     CyderAudioProcessor& processor;
     CyderStatus currentStatus;
